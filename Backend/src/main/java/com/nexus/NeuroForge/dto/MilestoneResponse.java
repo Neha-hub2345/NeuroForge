@@ -1,23 +1,12 @@
-package com.nexus.NeuroForge.models;
+package com.nexus.NeuroForge.dto;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 
-@Entity
-public class Milestone {
-    
-    @Id 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class MilestoneResponse {
     private Long id;
-    
     private String title;
     private LocalDate targetDate;
-
-    @ManyToOne
-    @JoinColumn(name = "project_id")
-    private Project project;
-
-    public Milestone() {}
+    private Long projectId;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -28,6 +17,6 @@ public class Milestone {
     public LocalDate getTargetDate() { return targetDate; }
     public void setTargetDate(LocalDate targetDate) { this.targetDate = targetDate; }
 
-    public Project getProject() { return project; }
-    public void setProject(Project project) { this.project = project; }
+    public Long getProjectId() { return projectId; }
+    public void setProjectId(Long projectId) { this.projectId = projectId; }
 }

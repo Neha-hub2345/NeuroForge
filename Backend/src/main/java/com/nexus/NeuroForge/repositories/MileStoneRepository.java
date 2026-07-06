@@ -2,6 +2,8 @@ package com.nexus.NeuroForge.repositories;
 
 import com.nexus.NeuroForge.models.Milestone;
 import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
 
-public interface MileStoneRepository extends JpaRepository<Milestone,Long> {
+public interface MilestoneRepository extends JpaRepository<Milestone, Long> {
+    List<Milestone> findByProjectId(Long projectId);
 }

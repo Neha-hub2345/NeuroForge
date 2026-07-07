@@ -1,7 +1,7 @@
 package com.nexus.NeuroForge.repositories;
 
 import com.nexus.NeuroForge.models.Project;
-import com.nexus.NeuroForge.models.ProjectStatus;
+import com.nexus.NeuroForge.models.interfaces.ProjectStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

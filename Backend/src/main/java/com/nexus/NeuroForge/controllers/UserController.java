@@ -1,6 +1,6 @@
 package com.nexus.NeuroForge.controllers;
 
-import com.nexus.NeuroForge.models.Role;
+import com.nexus.NeuroForge.models.interfaces.Role;
 import com.nexus.NeuroForge.models.User;
 import com.nexus.NeuroForge.repositories.UserRepository;
 import com.nexus.NeuroForge.services.UserService;
@@ -10,8 +10,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")

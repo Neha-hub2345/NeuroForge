@@ -1,5 +1,6 @@
 package com.nexus.NeuroForge.models;
 
+import com.nexus.NeuroForge.models.interfaces.PipelineStatus;
 import jakarta.persistence.*;
 
 @Entity

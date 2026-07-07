@@ -1,5 +1,6 @@
 package com.nexus.NeuroForge.models;
 
+import com.nexus.NeuroForge.models.interfaces.RequirementPriority;
 import jakarta.persistence.*;
 
 @Entity

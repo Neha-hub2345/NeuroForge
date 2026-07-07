@@ -1,6 +1,6 @@
 package com.nexus.NeuroForge.dto;
 
-import com.nexus.NeuroForge.models.ProjectStatus;
+import com.nexus.NeuroForge.models.interfaces.ProjectStatus;
 
 public class ProjectStatusUpdateRequest {
     private ProjectStatus status;

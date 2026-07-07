@@ -1,65 +1,56 @@
 package com.nexus.NeuroForge.config;
 
+// Ensure this import matches wherever you placed the CustomRoleConverter
+import com.nexus.NeuroForge.config.CustomRoleConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.oauth2.jwt.Jwt;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-//Change according to the keyclock configurations
-//I wrote this just for testing
-
 @Configuration
+@EnableWebSecurity
 @EnableMethodSecurity // Required to use @PreAuthorize
 public class SecurityConfig {
+
     @Autowired
-    CorsConfig corsConfig;
+    private  CorsConfig corsConfig;
+    @Autowired
+    private  UserSyncFilter userSyncFilter;
+    @Autowired
+    private CustomRoleConverter customRoleConverter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        // 1. Initialize the converter with your custom role logic
+        JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
+        jwtConverter.setJwtGrantedAuthoritiesConverter(customRoleConverter);
+
         http
-                //authenticate every request
+                // 2. Disable CSRF (standard for stateless REST APIs using Bearer tokens)
+                .csrf(csrf -> csrf.disable())
+
+                // 3. Apply your exact CORS configuration
+                .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
+
+                // 4. Secure all endpoints
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated()
                 )
-                .cors(cors->cors.configurationSource(corsConfig.corsConfigurationSource()))
-                //this part tells spring if a request comes in we need to expect a JWT in Bearer <token>,using OAuth2
-                //Resource Server logic to validate
 
+                // 5. Wire up the OAuth2 Resource Server with the custom JWT converter
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                );
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
+                )
+
+                // 6. Inject the Just-In-Time database sync filter after token validation
+                .addFilterAfter(userSyncFilter, BearerTokenAuthenticationFilter.class);
+
         return http.build();
     }
-
-    @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
-        jwtConverter.setJwtGrantedAuthoritiesConverter(this::extractAuthorities);
-        return jwtConverter;
-    }
-
-    private Collection<GrantedAuthority> extractAuthorities(Jwt jwt) {
-        Map<String, Object> realmAccess = jwt.getClaim("realm_access");
-        if (realmAccess == null || realmAccess.get("roles") == null) {
-            return List.of();
-        }
-
-        List<String> roles = (List<String>) realmAccess.get("roles");
-
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toList());
-    }
-
 }

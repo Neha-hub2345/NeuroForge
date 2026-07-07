@@ -1,7 +1,7 @@
 package com.nexus.NeuroForge.services;
 
 
-import com.nexus.NeuroForge.models.Role;
+import com.nexus.NeuroForge.models.interfaces.Role;
 import com.nexus.NeuroForge.models.Team;
 import com.nexus.NeuroForge.models.User;
 import com.nexus.NeuroForge.repositories.TeamRepository;
@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class UserService {

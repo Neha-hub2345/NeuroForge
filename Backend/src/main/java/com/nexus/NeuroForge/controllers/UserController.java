@@ -7,8 +7,6 @@ import com.nexus.NeuroForge.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,13 +17,6 @@ public class UserController {
     UserService userService;
     @Autowired
     UserRepository user;
-
-    //anyone can access
-    @PostMapping("/create")
-    public ResponseEntity<?> createUser(@AuthenticationPrincipal Jwt jwt) {
-        User currentUser = userService.getorCreateUser(jwt);
-        return ResponseEntity.ok("User created successfully");
-    }
 
     //only admin route , admin can assign any role to any user
     @PostMapping("/{id}/assignRole")

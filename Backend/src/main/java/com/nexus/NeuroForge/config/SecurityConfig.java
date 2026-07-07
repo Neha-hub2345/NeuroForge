@@ -1,5 +1,6 @@
 package com.nexus.NeuroForge.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -21,6 +22,8 @@ import java.util.stream.Collectors;
 @Configuration
 @EnableMethodSecurity // Required to use @PreAuthorize
 public class SecurityConfig {
+    @Autowired
+    CorsConfig corsConfig;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -29,8 +32,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated()
                 )
+                .cors(cors->cors.configurationSource(corsConfig.corsConfigurationSource()))
                 //this part tells spring if a request comes in we need to expect a JWT in Bearer <token>,using OAuth2
                 //Resource Server logic to validate
+
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 );

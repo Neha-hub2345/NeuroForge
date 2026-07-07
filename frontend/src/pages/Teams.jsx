@@ -5,14 +5,17 @@ import { Alert, Modal, EmptyState } from '../components/ui'
 import { canManage, canDelete } from '../utils/roles'
 
 export default function Teams() {
-  const { user } = useAuth()
+  // 1. Destructure 'roles' instead of 'user'
+  const { roles } = useAuth()
+  
   const [teams, setTeams] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
 
-  const canEdit = canManage(user?.role)
-  const canRemove = canDelete(user?.role)
+  // 2. Pass the primary Keycloak role into your utility functions
+  const canEdit = canManage(roles?.[0])
+  const canRemove = canDelete(roles?.[0])
 
   const load = async () => {
     setLoading(true)

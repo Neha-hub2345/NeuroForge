@@ -1,53 +1,51 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { authApi } from '../api/auth'
+import React, { createContext, useContext, useEffect, useState } from "react";
+import keycloak from "../lib/keyclock";
 
-const AuthContext = createContext(null)
-const STORAGE_KEY = 'nf_user'
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
+    const interval = setInterval(async () => {
       try {
-        setUser(JSON.parse(stored))
-      } catch {
-        localStorage.removeItem(STORAGE_KEY)
+        await keycloak.updateToken(30);
+      } catch (err) {
+        console.error("Token refresh failed:", err);
       }
-    }
-    setLoading(false)
-  }, [])
+    }, 15000);
 
-  const login = async (username, password) => {
-    const loggedInUser = await authApi.login(username, password)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(loggedInUser))
-    setUser(loggedInUser)
-    return loggedInUser
+    setReady(true);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!ready) return null;
+
+  const customRole = keycloak.tokenParsed?.app_role;
+  let roles = [];
+  if (customRole) {
+    roles = Array.isArray(customRole) ? customRole : [customRole];
+  } else {
+    roles = keycloak.tokenParsed?.realm_access?.roles ?? [];
   }
 
-  const register = async (data) => {
-    const newUser = await authApi.register(data)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser))
-    setUser(newUser)
-    return newUser
-  }
+  const value = {
+    token: keycloak.token,
+    username: keycloak.tokenParsed?.preferred_username,
+    roles,
+    hasRole: (...allowed) => allowed.some((r) => roles.includes(r)),
+    logout: () => keycloak.logout({ redirectUri: window.location.origin }),
+    
+    // ADDED THESE TWO LINES FOR THE LANDING PAGE:
+    isAuthenticated: !!keycloak.authenticated,
+    login: () => keycloak.login(),
+  };
 
-  const logout = () => {
-    localStorage.removeItem(STORAGE_KEY)
-    setUser(null)
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  return ctx;
 }

@@ -9,7 +9,10 @@ import { canManage } from '../utils/roles'
 
 export default function ProjectDetail() {
   const { id } = useParams()
-  const { user } = useAuth()
+  
+  // 1. Destructure 'roles' instead of 'user'
+  const { roles } = useAuth()
+  
   const [project, setProject] = useState(null)
   const [sprints, setSprints] = useState([])
   const [milestones, setMilestones] = useState([])
@@ -21,7 +24,8 @@ export default function ProjectDetail() {
   const [savingSprint, setSavingSprint] = useState(false)
   const [savingMilestone, setSavingMilestone] = useState(false)
 
-  const canEdit = canManage(user?.role)
+  // 2. Pass the first role from the Keycloak array into your existing utility function
+  const canEdit = canManage(roles?.[0])
 
   const load = async () => {
     setLoading(true)

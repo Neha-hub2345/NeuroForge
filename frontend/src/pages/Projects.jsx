@@ -10,7 +10,9 @@ import { canManage, canDelete } from '../utils/roles'
 const STATUS_OPTIONS = ['ACTIVE', 'ON_HOLD', 'COMPLETED']
 
 export default function Projects() {
-  const { user } = useAuth()
+  // 1. Destructure roles and username from Keycloak
+  const { roles, username } = useAuth()
+  
   const [projects, setProjects] = useState([])
   const [teams, setTeams] = useState([])
   const [users, setUsers] = useState([])
@@ -58,8 +60,9 @@ export default function Projects() {
     }
   }
 
-  const canEdit = canManage(user?.role)
-  const canRemove = canDelete(user?.role)
+  // 2. Pass the primary role for permissions
+  const canEdit = canManage(roles?.[0])
+  const canRemove = canDelete(roles?.[0])
 
   return (
     <div className="page">
@@ -152,7 +155,7 @@ export default function Projects() {
         <CreateProjectModal
           teams={teams}
           users={users}
-          currentUser={user}
+          currentUsername={username} // 3. Pass username instead of full user object
           onClose={() => setShowCreate(false)}
           onCreated={(project) => {
             setProjects((prev) => [project, ...prev])
@@ -176,10 +179,15 @@ export default function Projects() {
   )
 }
 
-function CreateProjectModal({ teams, users, currentUser, onClose, onCreated }) {
+function CreateProjectModal({ teams, users, currentUsername, onClose, onCreated }) {
+  // 4. Find the matching DB user by their Keycloak username
+  const currentUserInDb = users.find((u) => u.username === currentUsername)
+
   const [name, setName] = useState('')
   const [teamId, setTeamId] = useState('')
-  const [managerId, setManagerId] = useState(currentUser?.id ? String(currentUser.id) : '')
+  
+  // 5. Safely default to the found DB ID
+  const [managerId, setManagerId] = useState(currentUserInDb?.id ? String(currentUserInDb.id) : '')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -228,7 +236,7 @@ function CreateProjectModal({ teams, users, currentUser, onClose, onCreated }) {
             <option value="">Select a manager</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
-                {u.username} {u.id === currentUser?.id ? '(you)' : ''}
+                {u.username} {u.id === currentUserInDb?.id ? '(you)' : ''}
               </option>
             ))}
           </select>

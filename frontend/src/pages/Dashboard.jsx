@@ -7,7 +7,8 @@ import { useAuth } from '../context/AuthContext'
 import { Alert, StatusBadge } from '../components/ui'
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { username, roles } = useAuth()
+  
   const [projects, setProjects] = useState([])
   const [teams, setTeams] = useState([])
   const [users, setUsers] = useState([])
@@ -25,10 +26,12 @@ export default function Dashboard() {
       })
       .catch((err) => setError(err.message))
       .finally(() => mounted && setLoading(false))
-    return () => {
-      mounted = false
-    }
+    return () => { mounted = false }
   }, [])
+
+  // Derive dynamic team information from the fetched users list
+  const currentUser = users.find((u) => u.username === username);
+  const myTeamName = currentUser?.team?.name || 'No team assigned';
 
   const activeCount = projects.filter((p) => p.status === 'ACTIVE').length
   const recentProjects = [...projects]
@@ -39,7 +42,7 @@ export default function Dashboard() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>Welcome back, {user?.username}</h1>
+          <h1>Welcome back, {username}</h1>
           <p className="page-subtitle">Here's what's happening across NeuroForge Nexus.</p>
         </div>
       </div>
@@ -64,17 +67,20 @@ export default function Dashboard() {
         </div>
         <div className="stat-card">
           <div className="stat-label">Your Role</div>
-          <div className="stat-value stat-value-sm">{user?.role?.replaceAll('_', ' ') || '—'}</div>
-          <div className="stat-foot">{user?.teamName ? `Team: ${user.teamName}` : 'No team assigned'}</div>
+          <div className="stat-value stat-value-sm">
+            {roles?.[0]?.replaceAll('_', ' ') || '—'}
+          </div>
+          {/* Dynamic Sync: Replaces "Team sync pending"
+          <div className="stat-foot">
+            {loading ? '...' : `Team: ${myTeamName}`}
+          </div> */}
         </div>
       </div>
 
       <div className="panel">
         <div className="panel-header">
           <h2>Recent Projects</h2>
-          <Link className="link" to="/projects">
-            View all →
-          </Link>
+          <Link className="link" to="/projects">View all →</Link>
         </div>
 
         {!loading && recentProjects.length === 0 ? (
@@ -99,12 +105,10 @@ export default function Dashboard() {
               {recentProjects.map((p) => (
                 <tr key={p.id}>
                   <td>{p.name}</td>
-                  <td>
-                    <StatusBadge status={p.status} />
-                  </td>
-                  <td>{p.teamName}</td>
+                  <td><StatusBadge status={p.status} /></td>
+                  <td>{p.teamName || '—'}</td>
                   <td>{p.managerUsername || '—'}</td>
-                  <td>{p.createdAt}</td>
+                  <td>{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '—'}</td>
                 </tr>
               ))}
             </tbody>

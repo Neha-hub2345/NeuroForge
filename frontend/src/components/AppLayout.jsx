@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { roleLabel } from '../utils/roles'
 
@@ -10,12 +10,12 @@ const navItems = [
 ]
 
 export default function AppLayout() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  // 1. Correctly destructure from useAuth
+  const { username, roles, logout } = useAuth()
 
   const handleLogout = () => {
+    // 2. Just call logout(). Keycloak takes over and redirects the browser.
     logout()
-    navigate('/login', { replace: true })
   }
 
   return (
@@ -44,10 +44,13 @@ export default function AppLayout() {
 
         <div className="sidebar-footer">
           <div className="user-chip">
-            <div className="avatar">{user?.username?.[0]?.toUpperCase() || '?'}</div>
+            {/* 3. Updated all 'user?.username' to just 'username' */}
+            <div className="avatar">{username?.[0]?.toUpperCase() || '?'}</div>
             <div>
-              <div className="user-name">{user?.username}</div>
-              <div className="user-role">{roleLabel(user?.role)}</div>
+              <div className="user-name">{username}</div>
+              
+              {/* 4. Pass the first role from the array into the formatter */}
+              <div className="user-role">{roleLabel(roles?.[0]) || roles?.[0]}</div>
             </div>
           </div>
           <button className="btn-ghost" onClick={handleLogout}>

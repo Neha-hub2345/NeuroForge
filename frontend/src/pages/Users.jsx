@@ -6,13 +6,16 @@ import { Alert } from '../components/ui'
 import { ROLES, roleLabel } from '../utils/roles'
 
 export default function Users() {
-  const { user: currentUser } = useAuth()
+  // 1. Destructure username and the hasRole helper from Keycloak
+  const { username: currentUsername, hasRole } = useAuth()
+  
   const [users, setUsers] = useState([])
   const [teams, setTeams] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
-  const isAdmin = currentUser?.role === 'ADMIN'
+  // 2. Cleanly check if the user is an admin using Keycloak's roles
+  const isAdmin = hasRole('ADMIN')
 
   const load = async () => {
     setLoading(true)
@@ -41,13 +44,28 @@ export default function Users() {
     }
   }
 
-  const handleTeamChange = async (u, teamId) => {
-    setError('')
+ const handleTeamChange = async (u, teamId) => {
+    setError('');
+    // 1. Optimistic Update: Update the UI immediately so it doesn't feel sluggish
+    const originalUsers = [...users];
+    
+    // Create a new team object based on the selection
+    const selectedTeam = teams.find(t => t.id === Number(teamId)) || null;
+    
+    setUsers((prev) => prev.map((x) => 
+      x.id === u.id ? { ...x, team: selectedTeam } : x
+    ));
+
     try {
-      const updated = await usersApi.assignTeam(u.id, teamId ? Number(teamId) : null)
-      setUsers((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+      // 2. Server Sync: Actually call the backend
+      const updated = await usersApi.assignTeam(u.id, teamId ? Number(teamId) : null);
+      
+      // 3. Reconciliation: Ensure our local state matches the DB exactly
+      setUsers((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
     } catch (err) {
-      setError(err.message)
+      // If it fails, revert to the original data
+      setError("Failed to sync team. Reverting...");
+      setUsers(originalUsers);
     }
   }
 
@@ -79,7 +97,8 @@ export default function Users() {
               {users.map((u) => (
                 <tr key={u.id}>
                   <td>
-                    {u.username} {u.id === currentUser?.id && <span className="tag-you">you</span>}
+                    {/* 3. Match by Keycloak username instead of DB ID */}
+                    {u.username} {u.username === currentUsername && <span className="tag-you">you</span>}
                   </td>
                   <td>{u.email}</td>
                   <td>

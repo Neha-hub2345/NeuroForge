@@ -18,12 +18,14 @@ public class TeamController {
     @Autowired
     private TeamService teamService;
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<TeamResponse>> getAllTeams(){
         return ResponseEntity.ok(teamService.getAll());
 
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<TeamResponse> getTeam(@PathVariable Long id){
         return ResponseEntity.ok(teamService.getById(id));

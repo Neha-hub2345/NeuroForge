@@ -24,6 +24,7 @@ public class UserController {
 
     // Inside UserController.java
 
+    @PreAuthorize("hasAnyRole('ADMIN','PROJECT_MANAGER')")
     @GetMapping()
     public ResponseEntity<List<UserResponse>> getUsers(){
         // Map all users to the flat DTO

@@ -22,6 +22,7 @@ public class MilestoneController {
         return ResponseEntity.ok(milestoneService.createMilestone(req));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<MilestoneResponse>> getProjectMilestones(@PathVariable Long projectId) {
         return ResponseEntity.ok(milestoneService.getMilestonesByProject(projectId));

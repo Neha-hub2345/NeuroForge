@@ -22,6 +22,7 @@ public class SprintController {
         return ResponseEntity.ok(sprintService.planSprint(req));
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<SprintResponse>> getProjectSprints(@PathVariable Long projectId) {
         return ResponseEntity.ok(sprintService.getSprintsByProject(projectId));

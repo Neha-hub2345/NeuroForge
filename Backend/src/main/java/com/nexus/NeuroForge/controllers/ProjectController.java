@@ -27,12 +27,13 @@ public class ProjectController {
         String creatorUsername = jwt.getClaimAsString("preferred_username");
         return ResponseEntity.ok(projectService.createProject(req, creatorUsername));
     }
-
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/getProject")
     public ResponseEntity<List<ProjectResponse>> getAllProjects() {
         return ResponseEntity.ok(projectService.getAll());
     }
 
+    @PreAuthorize("isAuthenticated()")
     @GetMapping("/{id}")
     public ResponseEntity<ProjectResponse> getProject(@PathVariable Long id) {
         return ResponseEntity.ok(projectService.getById(id));

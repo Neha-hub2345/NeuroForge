@@ -40,6 +40,18 @@ public class Team {
         this.members = members;
     }
 
-    @OneToMany(mappedBy = "team", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "team", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<User> members = new ArrayList<>();
+
+    public void addMember(User user) {
+        this.members.add(user);
+        user.setTeam(this); // Keeps the relationship in sync
+    }
+
+    public void removeMember(User user) {
+        this.members.remove(user);
+        user.setTeam(null); // Keeps the relationship in sync
+    }
+
+
 }

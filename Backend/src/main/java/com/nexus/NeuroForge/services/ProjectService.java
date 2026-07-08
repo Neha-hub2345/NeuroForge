@@ -100,8 +100,7 @@ public class ProjectService {
         response.setId(p.getId());
         response.setName(p.getName());
         response.setStatus(p.getStatus());
-        response.setTeamName(p.getTeam() != null ? p.getTeam().toString() : "Unassigned");
-        response.setManagerUsername(p.getManager() != null ? p.getManager().getUsername() : null);
+        response.setTeamName(p.getTeam() != null ? p.getTeam().getName() : "Unassigned");        response.setManagerUsername(p.getManager() != null ? p.getManager().getUsername() : null);
         response.setCreatedAt(p.getCreatedAt());
         return response;
 

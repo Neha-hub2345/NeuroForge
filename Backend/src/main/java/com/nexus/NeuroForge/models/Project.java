@@ -4,6 +4,8 @@ import com.nexus.NeuroForge.models.interfaces.ProjectStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Project {
@@ -23,6 +25,12 @@ public class Project {
     private User manager;
 
     private LocalDate createdAt;
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Milestone> milestones = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Sprint> sprints = new ArrayList<>();
 
     public Project(){}
 

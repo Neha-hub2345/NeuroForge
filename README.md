@@ -147,14 +147,14 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
 
 
+
+```
   ### 4.3 the backend run
 
 1.   ./mvnw spring-boot:run
 or
 1.go to Backend/src/main/java/com/nexus/NeuroForge/NeuroForgeApplication.java
 then right click run application
-```
-
 The backend will be live at `http://localhost:9000`.
 
 ---

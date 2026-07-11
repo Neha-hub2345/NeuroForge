@@ -20,7 +20,6 @@ public class UserSyncFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
-    // Note: Removed @Autowired on the field since you are using constructor injection.
     // Spring automatically injects dependencies into the constructor.
     public UserSyncFilter(UserRepository userRepository) {
         this.userRepository = userRepository;
@@ -69,7 +68,6 @@ public class UserSyncFilter extends OncePerRequestFilter {
                 // If Keycloak sends a role that doesn't exist in your Enum, it lands here.
                 // You can either leave the role as is, or set a fallback default role.
                 System.err.println("Warning: Unknown role received from Keycloak: " + roleStr);
-                // user.setRole(Role.DEFAULT_USER); // Optional fallback
             }
 
             userRepository.save(user);

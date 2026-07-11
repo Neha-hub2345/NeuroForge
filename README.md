@@ -28,6 +28,8 @@ This is used to initialize the local Postgres container on first run. Any value 
 
 ## 3. Running the stack
 
+** run the start everything command only rest are for reference only**
+
 **Start everything (first run / after code changes):**
 ```bash
 docker compose up --build

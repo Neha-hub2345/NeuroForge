@@ -12,10 +12,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d neuroforge_nexus"]
+      interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 5
+      start_period: 30s
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
@@ -29,12 +30,11 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
     healthcheck:
-      # Reverted to bash TCP ping because 'curl' is missing in this minimal image
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
-      start_period: 30s
+      start_period: 300s
 
   kafka:
     image: apache/kafka:latest
@@ -58,12 +58,11 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
     healthcheck:
-      # FIXED: Uses Kafka's native tool so it speaks the correct protocol
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 15
-      start_period: 20s
+      start_period: 300s
 
   backend:
     build:
@@ -87,7 +86,7 @@ services:
       keycloak:
         condition: service_healthy
       kafka:
-        condition: service_healthy
+        condition: service_started
 
   frontend:
     build:

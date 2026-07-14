@@ -1,9 +1,6 @@
 package com.nexus.NeuroForge.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
 @Entity
 public class Task {
@@ -13,18 +10,25 @@ public class Task {
     private Long id;
 
     private String title;
-
     private int points;
+    private String status;
+    private Long assigneeId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sprint_id", nullable = false)
+    private Sprint sprint;
 
     public Task() {
     }
 
-    public Task(Long id, String title, int points) {
+    public Task(Long id, String title, int points, String status, Long assigneeId, Sprint sprint) {
         this.id = id;
         this.title = title;
         this.points = points;
+        this.status = status;
+        this.assigneeId = assigneeId;
+        this.sprint = sprint;
     }
-
 
     public Long getId() {
         return id;
@@ -48,5 +52,29 @@ public class Task {
 
     public void setPoints(int points) {
         this.points = points;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Long getAssigneeId() {
+        return assigneeId;
+    }
+
+    public void setAssigneeId(Long assigneeId) {
+        this.assigneeId = assigneeId;
+    }
+
+    public Sprint getSprint() {
+        return sprint;
+    }
+
+    public void setSprint(Sprint sprint) {
+        this.sprint = sprint;
     }
 }

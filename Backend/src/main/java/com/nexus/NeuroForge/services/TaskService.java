@@ -1,10 +1,12 @@
 package com.nexus.NeuroForge.services;
 
 import com.nexus.NeuroForge.dto.TaskRequest;
+import com.nexus.NeuroForge.events.TaskEvent;
 import com.nexus.NeuroForge.models.Sprint;
 import com.nexus.NeuroForge.models.Task;
 import com.nexus.NeuroForge.repositories.SprintRepository;
 import com.nexus.NeuroForge.repositories.TaskRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -13,6 +15,9 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final SprintRepository sprintRepository;
+
+    @Autowired
+    private  KafkaProducerService kafkaProducer;
 
     public TaskService(TaskRepository taskRepository, SprintRepository sprintRepository) {
         this.taskRepository = taskRepository;
@@ -38,7 +43,12 @@ public class TaskService {
             .orElseThrow(() -> new RuntimeException("Task not found"));
     
     task.setStatus(newStatus);
-    return taskRepository.save(task);
+        Task updatedTask = taskRepository.save(task);
+        TaskEvent event = new TaskEvent(updatedTask.getId().toString(), "TASK_STATUS_UPDATED", "Task " + updatedTask.getId() + " is now " + newStatus);
+        kafkaProducer.publishTaskEvent(event);
+
+        return updatedTask;
+
 }
 
     public Task assignUserToTask(Long taskId, Long userId) {
@@ -52,5 +62,6 @@ public class TaskService {
     
     public List<Task> getTasksForSprint(Long sprintId) {
         return taskRepository.findBySprintId(sprintId);
+
     }
 }

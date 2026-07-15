@@ -1,5 +1,6 @@
 package com.nexus.NeuroForge.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 @Entity
@@ -16,6 +17,7 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sprint_id", nullable = false)
+    @JsonIgnore // Add this annotation
     private Sprint sprint;
 
     public Task() {

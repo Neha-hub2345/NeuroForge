@@ -1,5 +1,7 @@
 package com.nexus.NeuroForge.config;
 
+// Ensure this import matches wherever you placed the CustomRoleConverter
+import com.nexus.NeuroForge.config.CustomRoleConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -7,8 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
@@ -16,21 +16,19 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity // Required to use @PreAuthorize
 public class SecurityConfig {
 
     @Autowired
-    private CorsConfig corsConfig;
-
+    private  CorsConfig corsConfig;
     @Autowired
-    private UserSyncFilter userSyncFilter;
+    private  UserSyncFilter userSyncFilter;
+    @Autowired
+    private CustomRoleConverter customRoleConverter;
 
+    // --- ADDED: the two properties from application.properties ---
     @Value("${app.keycloak.jwk-set-uri}")
     private String jwkSetUri;
 
@@ -40,61 +38,42 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
+        // 1. Initialize the converter with your custom role logic
+        JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
+        jwtConverter.setJwtGrantedAuthoritiesConverter(customRoleConverter);
+
         http
-                // 1. Disable CSRF for stateless REST APIs
+                // 2. Disable CSRF (standard for stateless REST APIs using Bearer tokens)
                 .csrf(csrf -> csrf.disable())
 
-                // 2. Apply CORS config
+                // 3. Apply your exact CORS configuration
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
 
-                // 3. Secure all endpoints
+                // 4. Secure all endpoints
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest().authenticated()
                 )
 
-                // 4. Wire up OAuth2 with our custom Keycloak Role Converter
+                // 5. Wire up the OAuth2 Resource Server with the custom JWT converter
+                //    AND the custom decoder (ADDED: .decoder(jwtDecoder()))
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(keycloakJwtConverter())
+                                .jwtAuthenticationConverter(jwtConverter)
                                 .decoder(jwtDecoder())
                         )
                 )
 
-                // 5. Inject User Sync Filter
+                // 6. Inject the Just-In-Time database sync filter after token validation
                 .addFilterAfter(userSyncFilter, BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * THE FIX: This acts as the translator between Keycloak and Spring Boot.
-     * It extracts roles from Keycloak's "realm_access" folder and adds the mandatory "ROLE_" prefix.
-     */
-    @Bean
-    public JwtAuthenticationConverter keycloakJwtConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            Collection<GrantedAuthority> authorities = new ArrayList<>();
-
-            // Read the "realm_access" map from the token
-            Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-
-            if (realmAccess != null && realmAccess.containsKey("roles")) {
-                @SuppressWarnings("unchecked")
-                Collection<String> roles = (Collection<String>) realmAccess.get("roles");
-
-                for (String role : roles) {
-                    // Spring Security strictly requires the "ROLE_" prefix for hasRole() checks!
-                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
-                }
-            }
-            return authorities;
-        });
-
-        return converter;
-    }
-
+    // --- ADDED: this bean is what actually solves the Docker networking
+    // problem — fetches Keycloak's signing keys via the fast,
+    // container-internal address (jwkSetUri), but validates the token's
+    // "iss" claim against the browser-facing address (issuer), which is
+    // what Keycloak actually stamped onto the token when the user logged in.
     @Bean
     public JwtDecoder jwtDecoder() {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();

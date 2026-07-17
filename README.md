@@ -87,4 +87,4 @@ docker compose down -v
 
 ## 5. Keycloak Configuration
 
-Open **http://localhost:8080** and do the configurations exactly as shown in the `keycloak_configuration_runbook`.
+Open **http://localhost:8080** and do the configurations exactly as shown in the `Keycloak_Configuration_Runbook`.

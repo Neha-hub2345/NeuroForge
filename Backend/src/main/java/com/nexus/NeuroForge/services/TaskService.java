@@ -35,7 +35,19 @@ public class TaskService {
         task.setAssigneeId(request.getAssigneeId());
         task.setSprint(sprint);
 
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+
+        // Broadcast the assignment event to Kafka if someone was assigned during creation
+        if (savedTask.getAssigneeId() != null) {
+            TaskEvent event = new TaskEvent(
+                    savedTask.getId().toString(),
+                    "TASK_ASSIGNED",
+                    "You were assigned to a new task: " + savedTask.getTitle()
+            );
+            kafkaProducer.publishTaskEvent(event);
+        }
+
+        return savedTask;
     }
 
     public Task updateTaskStatus(Long taskId, String newStatus) {
@@ -54,12 +66,20 @@ public class TaskService {
     public Task assignUserToTask(Long taskId, Long userId) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
-        
+
         task.setAssigneeId(userId);
-        
-        return taskRepository.save(task);
+        Task savedTask = taskRepository.save(task);
+
+        // Broadcast the assignment event to Kafka
+        TaskEvent event = new TaskEvent(
+                savedTask.getId().toString(),
+                "TASK_ASSIGNED",
+                "You were assigned to task: " + savedTask.getTitle()
+        );
+        kafkaProducer.publishTaskEvent(event);
+
+        return savedTask;
     }
-    
     public List<Task> getTasksForSprint(Long sprintId) {
         return taskRepository.findBySprintId(sprintId);
 

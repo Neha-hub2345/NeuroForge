@@ -20,16 +20,23 @@ public class Task {
     @JsonIgnore // Add this annotation
     private Sprint sprint;
 
+
+    @Column(name = "is_blocked")
+    private Boolean isBlocked = false;
+
+
+
     public Task() {
     }
 
-    public Task(Long id, String title, int points, String status, Long assigneeId, Sprint sprint) {
+    public Task(Long id, String title, int points, String status, Long assigneeId, Sprint sprint, Boolean isBlocked) {
         this.id = id;
         this.title = title;
         this.points = points;
         this.status = status;
         this.assigneeId = assigneeId;
         this.sprint = sprint;
+        this.isBlocked=isBlocked;
     }
 
     public Long getId() {
@@ -78,5 +85,13 @@ public class Task {
 
     public void setSprint(Sprint sprint) {
         this.sprint = sprint;
+    }
+
+    public Boolean getIsBlocked() {
+        return isBlocked != null ? isBlocked : false;
+    }
+
+    public void setIsBlocked(Boolean blocked) {
+        this.isBlocked = blocked;
     }
 }

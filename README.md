@@ -1,11 +1,19 @@
-# NeuroForge Nexus — Local Setup Guide
+# NeuroForge Nexus 🚀
+
+NeuroForge Nexus is an Agile project management platform featuring Kanban boards, sprint tracking, blocker management, and real-time event-driven notifications powered by Kafka. 
+
+This repository contains the full-stack Dockerized application (Spring Boot + React + Keycloak + Kafka + PostgreSQL).
+
+---
 
 ## Prerequisites
 
-- **Docker Desktop** installed and running
-  - https://www.docker.com/products/docker-desktop
-  - Verify: `docker --version` and `docker compose version`
-- Git
+*   **Docker Desktop** installed and running
+    *   Download: [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+    *   Verify installation: `docker --version` and `docker compose version`
+*   Git
+
+---
 
 ## 1. Clone the repository
 
@@ -13,6 +21,8 @@
 git clone <repo-url>
 cd <repo-folder>
 ```
+
+---
 
 ## 2. Set up `.env`
 
@@ -22,13 +32,15 @@ Create a `.env` file in the project root:
 DB_PASSWORD=<choose a password for the local Postgres database>
 ```
 
-This is used to initialize the local Postgres container on first run. Any value works — just don't reuse a real/sensitive password, since this is local dev only.
+This is used to initialize the local Postgres container on its first run. Any value works — just don't reuse a real/sensitive password, since this is for local development only.
 
-> ⚠️ `.env` is gitignored — never commit it.
+> ⚠️ **Note:** `.env` is gitignored — never commit it to the repository.
+
+---
 
 ## 3. Running the stack
 
-** run the start everything command only rest are for reference only**
+**Run the "Start everything" command to boot the application. The remaining commands are for reference only.**
 
 **Start everything (first run / after code changes):**
 ```bash
@@ -59,14 +71,20 @@ docker compose down
 ```bash
 docker compose down -v
 ```
-Use this if you hit a Postgres auth error after changing `DB_PASSWORD`, or want a totally clean slate.
+*Use this if you hit a Postgres authentication error after changing `DB_PASSWORD`, or if you want a totally clean slate.*
+
+---
 
 ## 4. Accessing services
 
 | Service | URL |
-|---|---|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:9000 |
-| Keycloak Admin Console | http://localhost:8080 |
+| :--- | :--- |
+| **Frontend UI** | http://localhost:5173 |
+| **Backend API** | http://localhost:9000 |
+| **Keycloak Admin Console** | http://localhost:8080 |
 
+---
 
+## 5. Keycloak Configuration
+
+Open **http://localhost:8080** and do the configurations exactly as shown in the `keycloak_configuration_runbook`.

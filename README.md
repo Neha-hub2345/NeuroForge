@@ -83,8 +83,9 @@ docker compose down -v
 | **Backend API** | http://localhost:9000 |
 | **Keycloak Admin Console** | http://localhost:8080 |
 
+
 ---
 
-## 5. Keycloak Configuration
+## 5. Keycloak Configuration (do only if keycloak does not gets configured automatically)
 
 Open **http://localhost:8080** and do the configurations exactly as shown in the `Keycloak_Configuration_Runbook`.

@@ -11,14 +11,39 @@
 // `client.get/post/patch` calls (examples left commented below) and nothing
 // else in the app needs to change.
 // ---------------------------------------------------------------------------
-import * as store from '../mocks/mockStore'
-// import client from '../api/client' // <- uncomment when wiring the real API
+
+import client from '../api/client'
+
+export const taskService = {
+  getTasksForSprint: (sprintId) =>
+    client.get(`/tasks/sprint/${sprintId}`).then((r) => r.data),
+
+  createTask: (sprintId, payload) =>
+    client.post('/tasks/create', { ...payload, sprintId }).then((r) => r.data),
+
+  updateStatus: (sprintId, taskId, status) =>
+    client.patch(`/tasks/${taskId}/status`, null, { params: { status } }).then((r) => r.data),
+
+  assignUser: (sprintId, taskId, assigneeId) =>
+    client.patch(`/tasks/${taskId}/assign/${assigneeId}`).then((r) => r.data),
+
+  TASK_STATUSES: ['TODO', 'IN_PROGRESS', 'DONE']
+}
+
+
+
+
+/*
+Old Code  
+
+//import * as store from '../mocks/mockStore'
 
 const LATENCY = 250
 
 function delay(value) {
   return new Promise((resolve) => setTimeout(() => resolve(value), LATENCY))
 }
+
 
 export const taskService = {
   getTasksForSprint: (sprintId) => delay(store.getTasksForSprint(sprintId)),
@@ -41,3 +66,5 @@ export const taskService = {
 
   TASK_STATUSES: store.TASK_STATUSES
 }
+
+*/

@@ -9,6 +9,25 @@
 // Notifications UI has something real to render. Swap the body of these
 // functions for a real subscription/fetch once that decision is made.
 // ---------------------------------------------------------------------------
+
+
+import client from '../api/client'
+
+export const notificationService = {
+  getAll: () => client.get('/notifications').then((r) => r.data),
+
+  markRead: (id) => client.put(`/notifications/${id}/read`).then((r) => r.data),
+
+  markAllRead: () => client.put('/notifications/read-all').then((r) => r.data),
+
+  remove: (id) => client.delete(`/notifications/${id}`).then((r) => r.data)
+}
+
+
+
+/*
+Old Code
+
 let seq = 1
 let notifications = [
   { id: seq++, type: 'TASK_STATUS_UPDATED', message: 'Task "Implement REST endpoint" moved to In Progress', read: false, createdAt: new Date(Date.now() - 3600000).toISOString() },
@@ -36,3 +55,5 @@ export const notificationService = {
     return delay(true)
   }
 }
+
+*/

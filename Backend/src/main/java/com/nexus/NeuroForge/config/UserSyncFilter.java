@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
@@ -14,14 +15,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Component
 public class UserSyncFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
-    // Note: Removed @Autowired on the field since you are using constructor injection.
-    // Spring automatically injects dependencies into the constructor.
     public UserSyncFilter(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -31,51 +31,64 @@ public class UserSyncFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        // Check if the user is authenticated via JWT
-        if (authentication instanceof JwtAuthenticationToken jwtAuth) {
-            var jwt = jwtAuth.getToken();
-
-            // Extract claims
-            String keycloakId = jwt.getSubject(); // The unique Keycloak ID
-            String username = jwt.getClaimAsString("preferred_username");
-            String email = jwt.getClaimAsString("email");
-
-            // 1. Extract role as a raw String first
-            Object roleObj = jwt.getClaim("app_role");
-            String roleStr = roleObj instanceof java.util.List ?
-                    ((java.util.List<?>) roleObj).get(0).toString() :
-                    String.valueOf(roleObj);
-
-            // Sync with local database
-            User user = userRepository.findByKeycloakId(keycloakId)
-                    .orElseGet(() -> {
-                        User newUser = new User();
-                        newUser.setKeycloakId(keycloakId);
-                        return newUser;
-                    });
-
-            user.setUsername(username);
-            user.setEmail(email);
-
-            // 2. Safely convert the String to your Enum
-            try {
-                if (roleStr != null && !roleStr.equals("null")) {
-                    // Convert to uppercase to match standard Enum naming conventions (e.g., ADMIN, DEVELOPER)
-                    user.setRole(Role.valueOf(roleStr.toUpperCase()));
-                }
-            } catch (IllegalArgumentException e) {
-                // If Keycloak sends a role that doesn't exist in your Enum, it lands here.
-                // You can either leave the role as is, or set a fallback default role.
-                System.err.println("Warning: Unknown role received from Keycloak: " + roleStr);
-                // user.setRole(Role.DEFAULT_USER); // Optional fallback
-            }
-
-            userRepository.save(user);
+        // Wrapping the ENTIRE sync attempt — a failure here should never
+        // stop the actual request the user is trying to make. Before this
+        // fix, any exception thrown below (e.g. a raced duplicate insert)
+        // propagated straight past the filter chain as a raw 500, since
+        // filters run before Spring's @RestControllerAdvice ever gets a
+        // chance to handle anything.
+        try {
+            syncUser();
+        } catch (Exception e) {
+            System.err.println("UserSyncFilter: sync failed, continuing request anyway — " + e.getMessage());
         }
 
-        // Continue the request chain
         filterChain.doFilter(request, response);
+    }
+
+    private void syncUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (!(authentication instanceof JwtAuthenticationToken jwtAuth)) {
+            return;
+        }
+
+        var jwt = jwtAuth.getToken();
+
+        String keycloakId = jwt.getSubject();
+        String username = jwt.getClaimAsString("preferred_username");
+        String email = jwt.getClaimAsString("email");
+
+        Object roleObj = jwt.getClaim("app_role");
+        String roleStr = roleObj instanceof List ? ((List<?>) roleObj).get(0).toString() : String.valueOf(roleObj);
+
+        User user = userRepository.findByKeycloakId(keycloakId)
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setKeycloakId(keycloakId);
+                    return newUser;
+                });
+
+        user.setUsername(username);
+        user.setEmail(email);
+
+        try {
+            if (roleStr != null && !roleStr.equals("null")) {
+                user.setRole(Role.valueOf(roleStr.toUpperCase()));
+            }
+        } catch (IllegalArgumentException e) {
+            System.err.println("Warning: Unknown role received from Keycloak: " + roleStr);
+        }
+
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException e) {
+            // Another request racing this exact same first-login moment
+            // already inserted this user a split second earlier. That's
+            // fine — the row exists now either way. This is the specific
+            // case that was previously surfacing as a raw server error.
+            System.out.println("User sync raced with a concurrent request for "
+                + username + " — row already created, ignoring");
+        }
     }
 }

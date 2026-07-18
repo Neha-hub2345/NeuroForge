@@ -1,6 +1,10 @@
 package com.nexus.NeuroForge.models;
 
+import java.util.ArrayList;
+
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Sprint {
@@ -15,6 +19,9 @@ public class Sprint {
     @ManyToOne
     @JoinColumn(name = "project_id")
     private Project project;
+
+    @OneToMany(mappedBy = "sprint", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Task> tasks = new ArrayList<>();
 
     public Sprint() {}
 

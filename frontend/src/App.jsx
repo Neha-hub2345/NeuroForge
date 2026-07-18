@@ -7,6 +7,11 @@ import Projects from './pages/Projects'
 import ProjectDetail from './pages/ProjectDetail'
 import Teams from './pages/Teams'
 import Users from './pages/Users'
+import KanbanBoard from './pages/KanbanBoard'
+import SprintProgress from './pages/SprintProgress'
+import Blockers from './pages/Blockers'
+import Notifications from './pages/Notifications'
+import Analytics from './pages/Analytics'
 
 export default function App() {
   return (
@@ -22,6 +27,13 @@ export default function App() {
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/teams" element={<Teams />} />
           <Route path="/users" element={<Users />} />
+
+          {/* Milestone 2 — mock-service-backed modules (see MILESTONE_2_REPORT.md) */}
+          <Route path="/tasks" element={<KanbanBoard />} />
+          <Route path="/sprint-progress" element={<SprintProgress />} />
+          <Route path="/blockers" element={<Blockers />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/analytics" element={<Analytics />} />
         </Route>
       </Route>
 

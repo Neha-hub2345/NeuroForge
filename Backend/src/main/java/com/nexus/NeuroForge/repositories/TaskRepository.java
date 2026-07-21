@@ -9,5 +9,6 @@ import java.util.List;
 public interface TaskRepository extends JpaRepository<Task, Long> {
     
     List<Task> findBySprintId(Long sprintId);
+    List<Task> findBySprintProjectId(Long projectId);
     
 }

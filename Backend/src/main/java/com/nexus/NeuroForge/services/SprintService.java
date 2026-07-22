@@ -22,28 +22,38 @@ public class SprintService {
 
     public SprintResponse planSprint(SprintRequest req) {
         Project project = projectRepository.findById(req.getProjectId())
-            .orElseThrow(() -> new RuntimeException("Project not found"));
-            
+                .orElseThrow(() -> new RuntimeException("Project not found"));
+
         Sprint sprint = new Sprint();
         sprint.setGoal(req.getGoal());
-        sprint.setDates(req.getDates());
+
+        // --- UPDATED: Use start and end dates ---
+        sprint.setStartDate(req.getStartDate());
+        sprint.setEndDate(req.getEndDate());
+        // ----------------------------------------
+
         sprint.setProject(project);
-            
+
         Sprint savedSprint = sprintRepository.save(sprint);
         return mapToResponse(savedSprint);
     }
 
     public List<SprintResponse> getSprintsByProject(Long projectId) {
         return sprintRepository.findByProjectId(projectId).stream()
-            .map(this::mapToResponse)
-            .collect(Collectors.toList());
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     private SprintResponse mapToResponse(Sprint sprint) {
         SprintResponse res = new SprintResponse();
         res.setId(sprint.getId());
         res.setGoal(sprint.getGoal());
-        res.setDates(sprint.getDates());
+
+        // --- UPDATED: Use start and end dates ---
+        res.setStartDate(sprint.getStartDate());
+        res.setEndDate(sprint.getEndDate());
+        // ----------------------------------------
+
         if (sprint.getProject() != null) {
             res.setProjectId(sprint.getProject().getId());
         }

@@ -20,7 +20,7 @@ export const notificationService = {
 
   markAllRead: () => client.put('/notifications/read-all').then((r) => r.data),
 
-  remove: (id) => client.delete(`/notifications/${id}`).then((r) => r.data)
+  delete: (id) => client.delete(`/notifications/${id}`).then((r) => r.data)
 }
 
 

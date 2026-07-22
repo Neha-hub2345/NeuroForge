@@ -23,6 +23,8 @@ export const taskService = {
 
   updateStatus: (sprintId, taskId, status) =>
     client.patch(`/tasks/${taskId}/status`, null, { params: { status } }).then((r) => r.data),
+   
+  deleteTask: (taskId) => client.delete(`/tasks/${taskId}`).then((r) => r.data),
 
   assignUser: (sprintId, taskId, assigneeId) =>
     client.patch(`/tasks/${taskId}/assign/${assigneeId}`).then((r) => r.data),

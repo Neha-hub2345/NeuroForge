@@ -46,7 +46,7 @@ export default function Blockers() {
         <div>
           <h1>Blockers</h1>
           <p className="page-subtitle">
-            Flag and resolve stuck work · <span className="mock-pill">Mock data — Milestone 2</span>
+            Flag and resolve stuck work 
           </p>
         </div>
       </div>

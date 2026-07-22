@@ -19,8 +19,8 @@ export default function SprintSelector({ projects, projectId, setProjectId, spri
           {sprints.length === 0 && <option value="">No sprints yet</option>}
           {sprints.map((s) => (
             <option key={s.id} value={s.id}>
-              {s.goal} ({s.dates})
-            </option>
+  {s.goal} ({s.startDate} to {s.endDate})
+</option>
           ))}
         </select>
       </label>

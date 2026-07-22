@@ -43,7 +43,7 @@ export default function SprintProgress() {
         <div>
           <h1>Sprint Progress</h1>
           <p className="page-subtitle">
-            Burndown &amp; velocity tracking · <span className="mock-pill">Mock data — Milestone 2</span>
+            Burndown &amp; velocity tracking 
           </p>
         </div>
       </div>

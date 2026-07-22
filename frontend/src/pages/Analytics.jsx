@@ -60,7 +60,7 @@ export default function Analytics() {
         <div>
           <h1>Analytics</h1>
           <p className="page-subtitle">
-            Cross-sprint overview · <span className="mock-pill">Mock data — Milestone 2</span>
+            Cross-sprint overview
           </p>
         </div>
       </div>

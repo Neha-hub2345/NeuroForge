@@ -10,7 +10,6 @@ import { canManage } from '../utils/roles'
 export default function ProjectDetail() {
   const { id } = useParams()
   
-  // 1. Destructure 'roles' instead of 'user'
   const { roles } = useAuth()
   
   const [project, setProject] = useState(null)
@@ -19,12 +18,12 @@ export default function ProjectDetail() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
-  const [sprintForm, setSprintForm] = useState({ goal: '', dates: '' })
+  // Updated state to handle separate start and end dates
+  const [sprintForm, setSprintForm] = useState({ goal: '', startDate: '', endDate: '' })
   const [milestoneForm, setMilestoneForm] = useState({ title: '', targetDate: '' })
   const [savingSprint, setSavingSprint] = useState(false)
   const [savingMilestone, setSavingMilestone] = useState(false)
 
-  // 2. Pass the first role from the Keycloak array into your existing utility function
   const canEdit = canManage(roles?.[0])
 
   const load = async () => {
@@ -57,11 +56,12 @@ export default function ProjectDetail() {
     try {
       const sprint = await sprintsApi.create({
         goal: sprintForm.goal.trim(),
-        dates: sprintForm.dates.trim(),
+        startDate: sprintForm.startDate,
+        endDate: sprintForm.endDate,
         projectId: Number(id)
       })
       setSprints((prev) => [sprint, ...prev])
-      setSprintForm({ goal: '', dates: '' })
+      setSprintForm({ goal: '', startDate: '', endDate: '' }) // Reset form
     } catch (err) {
       setError(err.message)
     } finally {
@@ -133,10 +133,19 @@ export default function ProjectDetail() {
                 onChange={(e) => setSprintForm((f) => ({ ...f, goal: e.target.value }))}
                 required
               />
+              {/* Changed to Date Inputs */}
               <input
-                placeholder="Dates (e.g. Jul 1 - Jul 14)"
-                value={sprintForm.dates}
-                onChange={(e) => setSprintForm((f) => ({ ...f, dates: e.target.value }))}
+                type="date"
+                title="Start Date"
+                value={sprintForm.startDate}
+                onChange={(e) => setSprintForm((f) => ({ ...f, startDate: e.target.value }))}
+                required
+              />
+              <input
+                type="date"
+                title="End Date"
+                value={sprintForm.endDate}
+                onChange={(e) => setSprintForm((f) => ({ ...f, endDate: e.target.value }))}
                 required
               />
               <button className="btn-primary" type="submit" disabled={savingSprint}>
@@ -152,7 +161,8 @@ export default function ProjectDetail() {
               {sprints.map((s) => (
                 <li key={s.id} className="list-item">
                   <div className="list-item-title">{s.goal}</div>
-                  <div className="list-item-sub">{s.dates}</div>
+                  {/* Updated display to show the date range */}
+                  <div className="list-item-sub">{s.startDate} to {s.endDate}</div>
                 </li>
               ))}
             </ul>

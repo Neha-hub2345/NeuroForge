@@ -1,20 +1,22 @@
 package com.nexus.NeuroForge.models;
 
-import java.util.ArrayList;
-
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 public class Sprint {
-    
-    @Id 
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     private String goal;
-    private String dates;
+
+    // Replace "String dates" with actual date types
+    private LocalDate startDate;
+    private LocalDate endDate;
 
     @ManyToOne
     @JoinColumn(name = "project_id")
@@ -31,8 +33,11 @@ public class Sprint {
     public String getGoal() { return goal; }
     public void setGoal(String goal) { this.goal = goal; }
 
-    public String getDates() { return dates; }
-    public void setDates(String dates) { this.dates = dates; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
 
     public Project getProject() { return project; }
     public void setProject(Project project) { this.project = project; }

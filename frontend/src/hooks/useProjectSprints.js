@@ -9,6 +9,7 @@ import { sprintsApi } from '../api/sprints'
 export function useProjectSprints() {
   const [projects, setProjects] = useState([])
   const [sprints, setSprints] = useState([])
+  const [sprintName, setSprintName] = useState('')
   const [projectId, setProjectId] = useState('')
   const [sprintId, setSprintId] = useState('')
   const [loadingProjects, setLoadingProjects] = useState(true)
@@ -40,6 +41,7 @@ export function useProjectSprints() {
         if (!mounted) return
         setSprints(data)
         setSprintId(data.length > 0 ? String(data[0].id) : '')
+        setSprintName(data.length > 0 ? String(data[0].name) : '')
       })
       .catch((err) => mounted && setError(err.message))
       .finally(() => mounted && setLoadingSprints(false))

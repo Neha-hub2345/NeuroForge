@@ -1,4 +1,4 @@
-export default function SprintSelector({ projects, projectId, setProjectId, sprints, sprintId, setSprintId, loadingSprints }) {
+export default function SprintSelector({ projects,sprintName ,projectId, setProjectId, sprints, sprintId, setSprintId, loadingSprints }) {
   return (
     <div className="sprint-selector">
       <label className="field field-inline">
@@ -19,7 +19,7 @@ export default function SprintSelector({ projects, projectId, setProjectId, spri
           {sprints.length === 0 && <option value="">No sprints yet</option>}
           {sprints.map((s) => (
             <option key={s.id} value={s.id}>
-  {s.goal} ({s.startDate} to {s.endDate})
+  {s.name} ({s.startDate} to {s.endDate})
 </option>
           ))}
         </select>

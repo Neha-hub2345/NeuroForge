@@ -5,6 +5,8 @@ import { projectsApi } from '../api/projects'
 import { usersApi } from '../api/users'
 import { taskService } from '../services/taskService'
 import { blockerService } from '../services/blockerService'
+import { useAuth } from '../context/AuthContext'
+import { canManage } from '../utils/roles'
 import SprintSelector from '../components/SprintSelector'
 import { Alert, Modal, EmptyState } from '../components/ui'
 
@@ -16,13 +18,15 @@ const COLUMNS = [
 
 export default function KanbanBoard() {
   const {
-    projects, sprints, projectId, setProjectId, sprintId, setSprintId,
+    projects, sprints, projectId, setProjectId, sprintId, sprintName, setSprintId,
     selectedSprint, loadingSprints, error: pickerError
   } = useProjectSprints()
 
+  const { roles } = useAuth()
+  const canEditTeam = canManage(roles?.[0])
+
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
-  const [projectTeamId, setProjectTeamId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
@@ -33,7 +37,6 @@ export default function KanbanBoard() {
   useEffect(() => {
     usersApi.getAll().then(setUsers).catch(() => {})
   }, [])
-
 
   // Fetch project details and extract teamName
   useEffect(() => {
@@ -71,6 +74,9 @@ export default function KanbanBoard() {
   }, [sprintId])
 
   const moveTask = async (taskId, status) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (task && task.isBlocked) return // Prevent moving blocked tasks
+
     try {
       const updated = await taskService.updateStatus(sprintId, taskId, status)
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
@@ -81,6 +87,9 @@ export default function KanbanBoard() {
 
   // Handle Assignee Change
   const handleAssign = async (taskId, userId) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (task && task.isBlocked) return // Prevent changing assignee for blocked tasks
+
     try {
       const updated = await taskService.assignUser(sprintId, taskId, userId)
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
@@ -102,7 +111,12 @@ export default function KanbanBoard() {
 
   const handleDrop = (status) => (e) => {
     e.preventDefault()
-    if (dragTaskId != null) moveTask(dragTaskId, status)
+    if (dragTaskId != null) {
+      const task = tasks.find(t => t.id === dragTaskId)
+      if (task && !task.isBlocked) {
+        moveTask(dragTaskId, status)
+      }
+    }
     setDragTaskId(null)
   }
 
@@ -110,12 +124,18 @@ export default function KanbanBoard() {
     <div className="page">
       <div className="page-header">
         <div>
-          <h1>Kanban Board</h1>
+          <h1>{selectedSprint ? selectedSprint.name || 'Sprint' : 'Kanban Board'}</h1>
           <p className="page-subtitle">
-            Task management for the active sprint
+            {selectedSprint ? `Goal: ${selectedSprint.goal || 'No goal set'}` : 'Task management for the active sprint'}
           </p>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreate(true)} disabled={!sprintId}>
+        <button 
+          className="btn-primary" 
+          onClick={() => setShowCreate(true)} 
+          disabled={!sprintId || !canEditTeam}
+          title={!canEditTeam ? "Only Admins and Project Managers can create tasks" : ""}
+          style={!canEditTeam ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
+        >
           <Plus size={16} /> New Task
         </button>
       </div>
@@ -125,7 +145,7 @@ export default function KanbanBoard() {
       <div className="panel panel-tight">
         <SprintSelector
           projects={projects} projectId={projectId} setProjectId={setProjectId}
-          sprints={sprints} sprintId={sprintId} setSprintId={setSprintId} loadingSprints={loadingSprints}
+          sprints={sprints} sprintName={sprintName} sprintId={sprintId} setSprintId={setSprintId} loadingSprints={loadingSprints}
         />
       </div>
 
@@ -153,8 +173,8 @@ export default function KanbanBoard() {
                     <div
                       key={task.id}
                       className="kanban-card"
-                      draggable
-                      onDragStart={() => setDragTaskId(task.id)}
+                      draggable={!task.isBlocked}
+                      onDragStart={() => !task.isBlocked && setDragTaskId(task.id)}
                       style={task.isBlocked ? { borderLeft: '4px solid var(--danger, #ef4444)', backgroundColor: 'rgba(239, 68, 68, 0.05)' } : {}}
                     >
                       <div className="kanban-card-title">
@@ -166,23 +186,27 @@ export default function KanbanBoard() {
                       </div>
                       
                       <div className="kanban-card-actions" style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                        {/* Status Select */}
+                        {/* Status Select - Disabled if blocked */}
                         <select
                           className="inline-select inline-select-sm"
                           value={task.status}
                           onChange={(e) => moveTask(task.id, e.target.value)}
+                          disabled={task.isBlocked}
+                          title={task.isBlocked ? "Cannot modify status of a blocked task" : "Change status"}
                         >
                           {COLUMNS.map((c) => (
                             <option key={c.key} value={c.key}>{c.label}</option>
                           ))}
                         </select>
 
-                        {/* Assignee Select - Restricted to Project Team Members */}
+                        {/* Assignee Select - Restricted to Admin/Project Manager */}
                         <select
                           className="inline-select inline-select-sm"
                           value={task.assigneeId || ''}
                           onChange={(e) => handleAssign(task.id, e.target.value)}
-                          title="Change Assignee"
+                          disabled={task.isBlocked || !canEditTeam}
+                          title={!canEditTeam ? "Only Admins and Project Managers can assign tasks" : task.isBlocked ? "Cannot reassign a blocked task" : "Change Assignee"}
+                          style={!canEditTeam ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
                         >
                           <option value="">Unassigned</option>
                           {filteredUsers.map((u) => (
@@ -192,12 +216,13 @@ export default function KanbanBoard() {
 
                         <div style={{ flex: 1 }}></div>
 
-                        {/* Block Button */}
+                        {/* Block Button - Disabled if already blocked */}
                         <button 
                           className="btn-ghost-sm" 
-                          onClick={() => setBlockingTask(task)} 
-                          title="Flag as blocked"
-                          style={task.isBlocked ? { color: 'var(--danger, #ef4444)' } : {}}
+                          onClick={() => !task.isBlocked && setBlockingTask(task)} 
+                          disabled={task.isBlocked}
+                          title={task.isBlocked ? "Task is already blocked" : "Flag as blocked"}
+                          style={task.isBlocked ? { color: 'var(--danger, #ef4444)', opacity: 0.6, cursor: 'not-allowed' } : {}}
                         >
                           <AlertTriangle size={14} />
                         </button>

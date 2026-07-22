@@ -1,0 +1,282 @@
+/* =========================================================================
+   NeuroForge Nexus — Keycloak Custom Theme CSS
+   Rewritten to match hand-built login.ftl / register.ftl (no PatternFly deps)
+   ========================================================================= */
+
+:root {
+  --bg: #05060c;
+  --surface: #10121e;
+  --surface-2: #151831;
+  --surface-glass: rgba(21, 24, 49, 0.75);
+  --border-glass: rgba(148, 163, 253, 0.14);
+  --line: #23263f;
+  --line-soft: #1a1d33;
+  --ink: #eef0ff;
+  --ink-soft: #9497c2;
+  --ink-faint: #62658a;
+  --accent: #7c6bff;
+  --accent-2: #4f8dff;
+  --accent-gradient: linear-gradient(135deg, #7c6bff 0%, #4f8dff 100%);
+  --danger: #ff6b6b;
+  --danger-soft: rgba(255, 107, 107, 0.14);
+  --success: #35d999;
+  --success-soft: rgba(53, 217, 153, 0.14);
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-glow: 0 0 0 1px rgba(124, 107, 255, 0.15), 0 8px 30px rgba(124, 107, 255, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+body, html {
+  background: var(--bg) !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  color: var(--ink) !important;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+a { color: inherit; }
+
+/* ---------- Auth card header text ---------- */
+.auth-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: var(--ink);
+}
+.auth-subtitle {
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  margin: 0 0 24px;
+}
+
+/* ---------- Form layout ---------- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+label {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: inline-flex;   /* inline-level: keeps the required-mark on the same line */
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.required-mark {
+  color: var(--danger);
+}
+
+/* ---------- Inputs & selects ---------- */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 13.5px;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239497c2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+
+/* ---------- Password field with visibility toggle ---------- */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-wrapper input {
+  padding-right: 42px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--ink-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.password-toggle-btn:hover {
+  color: var(--ink);
+  background: var(--surface);
+}
+.password-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ---------- Field errors ---------- */
+.field-error {
+  color: var(--danger);
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* ---------- Remember me / forgot password row ---------- */
+.form-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 20px;
+  font-size: 13px;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.checkbox-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.form-options a,
+.auth-footer-text a {
+  color: var(--accent-2);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 13px;
+}
+.form-options a:hover,
+.auth-footer-text a:hover {
+  text-decoration: underline;
+}
+
+.auth-footer-text {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* ---------- Buttons ---------- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--accent-gradient);
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(124, 107, 255, 0.3);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(124, 107, 255, 0.4);
+}
+.btn-block { width: 100%; }
+
+/* ---------- Alerts ---------- */
+.alert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+.alert-error { background: var(--danger-soft); color: #ffb3b3; border: 1px solid rgba(255, 107, 107, 0.25); }
+.alert-success { background: var(--success-soft); color: #8ff0cd; border: 1px solid rgba(53, 217, 153, 0.25); }
+
+/* ---------- Small helpers reused from template.ftl inline styles ---------- */
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--accent-gradient);
+  box-shadow: 0 6px 18px rgba(124, 107, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+  flex-shrink: 0;
+}
+
+.section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #cfc9ff;
+  background: rgba(124, 107, 255, 0.16);
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+}
+
+.hero-gradient-text {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- Responsive: stack the split-screen layout on narrow viewports ---------- */
+@media (max-width: 860px) {
+  body > div[style*="display: flex"][style*="height: 100vh"] {
+    flex-direction: column !important;
+    height: auto !important;
+    overflow-y: auto !important;
+  }
+}

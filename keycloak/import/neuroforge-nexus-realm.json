@@ -1,6 +1,7 @@
 {
   "id" : "b15d6c36-d1cb-4440-b4ed-a35ca14fa0b0",
   "realm" : "neuroforge-nexus",
+  "loginTheme": "neuroforge",
   "notBefore" : 0,
   "defaultSignatureAlgorithm" : "RS256",
   "revokeRefreshToken" : false,

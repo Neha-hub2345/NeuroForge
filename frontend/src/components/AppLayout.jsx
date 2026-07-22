@@ -16,7 +16,7 @@ const milestone1Items = [
 ]
 
 const milestone2Items = [
-  { to: '/tasks', label: 'Kanban Board', Icon: Trello },
+  { to: '/tasks', label: 'Task Manager', Icon: Trello },
   { to: '/sprint-progress', label: 'Sprint Progress', Icon: TrendingUp },
   { to: '/blockers', label: 'Blockers', Icon: AlertTriangle },
   { to: '/analytics', label: 'Analytics', Icon: BarChart3 }

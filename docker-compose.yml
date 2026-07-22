@@ -29,7 +29,9 @@ services:
       - "8080:8080"
     volumes:
       - keycloak_data:/opt/keycloak/data
-      - ./keycloak/import:/opt/keycloak/data/import   
+      - ./keycloak/import:/opt/keycloak/data/import 
+      - ./keycloak-themes:/opt/keycloak/themes/neuroforge   # <-- add this
+  
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1"]
       interval: 10s

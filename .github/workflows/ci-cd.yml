@@ -24,7 +24,7 @@ jobs:
           cache: 'maven'
 
       - name: Build with Maven
-        working-directory: ./payment-service
+        working-directory: ./Backend
         run: mvn clean verify -DskipTests
 
       - name: SonarQube Quality Gate Simulation

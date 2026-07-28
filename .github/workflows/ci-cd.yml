@@ -28,7 +28,7 @@ jobs:
         run: mvn clean verify -DskipTests
 
       - name: SonarQube Quality Gate Simulation
-        working-directory: ./payment-service
+        working-directory: ./Backend
         run: |
           echo "Executing static code analysis..."
           echo "Bugs: 0 | Vulnerabilities: 0 | Code Smells: 2"

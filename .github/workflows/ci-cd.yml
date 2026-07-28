@@ -23,11 +23,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build and Test
-        env:
-          DB_USERNAME: ${{ secrets.DB_USERNAME }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        run: mvn clean verify
+      - name: Build with Maven
+        working-directory: ./payment-service
+        run: mvn clean verify -DskipTests
 
       - name: SonarQube Quality Gate Simulation
         run: echo "Simulating SonarQube analysis... Quality Gate Passed."

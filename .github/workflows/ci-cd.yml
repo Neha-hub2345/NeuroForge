@@ -34,3 +34,6 @@ jobs:
           echo "Bugs: 0 | Vulnerabilities: 0 | Code Smells: 2"
           echo "Quality Gate Status: PASSED"
           echo "Sonar ✓"
+
+      - name: Trigger Jenkins Pipeline
+        run: curl -X POST "${{ secrets.NGROK_URL }}/generic-webhook-trigger/invoke?token=payment-service-token"

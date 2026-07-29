@@ -35,5 +35,5 @@ jobs:
           echo "Quality Gate Status: PASSED"
           echo "Sonar ✓"
 
-      - name: Trigger Jenkins Pipeline
-        run: curl -X POST "${{ secrets.NGROK_URL }}/generic-webhook-trigger/invoke?token=payment-service-token"
+      - name: Trigger Jenkins Webhook
+        run: curl -vs "${{ secrets.NGROK_URL }}/generic-webhook-trigger/invoke?token=NeuroForge-2026"

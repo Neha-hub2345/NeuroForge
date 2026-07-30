@@ -29,20 +29,17 @@ pipeline {
         stage('Docker Build & Deploy') {
             steps {
                 dir('Backend') {
-                    bat "docker build -t ${DOCKER_IMAGE} ."
-                    bat "docker rm -f ${DOCKER_IMAGE} || cmd /c \"exit 0\""
-                    bat "docker run -d -p ${PORT}:${PORT} --name ${DOCKER_IMAGE} ${DOCKER_IMAGE}"
+                    bat 'docker build -t payment-service .'
+                    bat 'docker rm -f payment-service || cmd /c "exit 0"'
+                    bat 'docker run -d -p 8081:9000 --name payment-service -e KEYCLOAK_JWK_SET_URI=http://host.docker.internal:8080/realms/neuroforge-nexus/protocol/openid-connect/certs -e KEYCLOAK_ISSUER=http://host.docker.internal:8080/realms/neuroforge-nexus -e KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092 payment-service'
                 }
             }
         }
         
         stage('Track Deployment') {
             steps {
-                // Jenkins native sleep command (OS independent)
-                sleep time: 15, unit: 'SECONDS'
-                
-                // Escaped double quotes required for Windows CMD JSON payloads
-                bat "curl -X POST http://localhost:${PORT}/api/track-deployment -H \"Content-Type: application/json\" -d \"{\\\"build_id\\\": \\\"${BUILD_NUMBER}\\\", \\\"status\\\": \\\"SUCCESS\\\"}\""
+                sleep time: 45, unit: 'SECONDS'
+                bat "curl -X POST http://localhost:8081/api/track-deployment -H \"Content-Type: application/json\" -d \"{\\\"build_id\\\": \\\"${BUILD_NUMBER}\\\", \\\"status\\\": \\\"SUCCESS\\\"}\""
             }
         }
     }

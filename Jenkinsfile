@@ -31,7 +31,7 @@ pipeline {
                 dir('Backend') {
                     bat 'docker build -t payment-service .'
                     bat 'docker rm -f payment-service || cmd /c "exit 0"'
-                    bat 'docker run -d -p 8081:9000 --name payment-service -e KEYCLOAK_JWK_SET_URI=http://host.docker.internal:8080/realms/neuroforge-nexus/protocol/openid-connect/certs -e KEYCLOAK_ISSUER=http://host.docker.internal:8080/realms/neuroforge-nexus -e KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092 payment-service'
+                    bat 'docker run -d -p 8081:9000 --name payment-service -e KEYCLOAK_JWK_SET_URI=http://host.docker.internal:8080/realms/neuroforge-nexus/protocol/openid-connect/certs -e KEYCLOAK_ISSUER=http://host.docker.internal:8080/realms/neuroforge-nexus -e KAFKA_BOOTSTRAP_SERVERS=host.docker.internal:9092 -e DB_URL=jdbc:postgresql://host.docker.internal:5432/neuroforge_nexus -e DB_USERNAME=postgres -e DB_PASSWORD=your_actual_password payment-service'
                 }
             }
         }

@@ -16,7 +16,8 @@ pipeline {
         stage('Build JAR') {
             steps {
                 dir('Backend') {
-                    bat 'mvn clean package -DskipTests'
+                    // Changed from mvn to mvnw.cmd
+                    bat 'mvnw.cmd clean package -DskipTests'
                 }
             }
         }

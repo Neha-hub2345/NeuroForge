@@ -33,11 +33,12 @@ pipeline {
         
         stage('Track Deployment') {
             steps {
-                sh '''
-                curl -X POST http://localhost:8081/api/track-deployment \
+                sh 'sleep 15'
+                sh """
+                curl -X POST http://localhost:${PORT}/api/track-deployment \
                 -H "Content-Type: application/json" \
-                -d '{"build_id": "'${BUILD_NUMBER}'", "status": "SUCCESS"}'
-                '''
+                -d '{"build_id": "${BUILD_NUMBER}", "status": "SUCCESS"}'
+                """
             }
         }
     }

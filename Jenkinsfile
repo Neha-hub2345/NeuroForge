@@ -38,8 +38,8 @@ pipeline {
         
         stage('Track Deployment') {
             steps {
-                // Windows substitute for sleep 15
-                bat 'timeout /t 15 /nobreak'
+                // Jenkins native sleep command (OS independent)
+                sleep time: 15, unit: 'SECONDS'
                 
                 // Escaped double quotes required for Windows CMD JSON payloads
                 bat "curl -X POST http://localhost:${PORT}/api/track-deployment -H \"Content-Type: application/json\" -d \"{\\\"build_id\\\": \\\"${BUILD_NUMBER}\\\", \\\"status\\\": \\\"SUCCESS\\\"}\""

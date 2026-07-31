@@ -20,7 +20,6 @@ pipeline {
         stage('Build JAR') {
             steps {
                 dir('Backend') {
-                    // Changed from mvn to mvnw.cmd
                     bat 'mvnw.cmd clean package -DskipTests'
                 }
             }
@@ -37,22 +36,20 @@ pipeline {
         }
         
         stage('Track Deployment') {
-    steps {
-        // Increase the wait time to outlast the 52-second boot time
-        sleep time: 80, unit: 'SECONDS'
-        
-        bat """
-        curl -X POST http://localhost:8081/api/track-deployment ^
-             -H "Content-Type: application/json" ^
-             -d "{\\"build_id\\": \\"${BUILD_NUMBER}\\", \\"status\\": \\"SUCCESS\\"}"
-        """
-    }
-}
+            steps {
+                sleep time: 80, unit: 'SECONDS'
+                
+                bat """
+                curl -X POST http://localhost:8081/api/track-deployment ^
+                     -H "Content-Type: application/json" ^
+                     -d "{\\"build_id\\": \\"${BUILD_NUMBER}\\", \\"status\\": \\"SUCCESS\\"}"
+                """
+            }
+        }
     }
     
     post {
         failure {
-            // Rollback commands executed directly in Windows CMD
             bat "docker stop ${DOCKER_IMAGE} || cmd /c \"exit 0\""
             bat "docker rm ${DOCKER_IMAGE} || cmd /c \"exit 0\""
         }

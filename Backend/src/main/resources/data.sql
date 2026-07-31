@@ -1,16 +1,8 @@
-
--- Sprint Seed Data
-
-
 INSERT INTO sprint (goal, dates, project_id)
 VALUES
 ('Sprint 1', '01-Jul-2026 to 15-Jul-2026', 1),
 ('Sprint 2', '2026-07-20 to 2026-08-02', 1),
 ('Sprint 3', '2026-08-03 to 2026-08-16', 1);
-
-
--- Task Seed Data
-
 
 INSERT INTO task (title, points, status, assignee_id, sprint_id)
 VALUES
@@ -29,7 +21,6 @@ VALUES
 ('Dark Mode', 2, 'TODO', 1, 1),
 ('Role Management', 8, 'IN_PROGRESS', 2, 1),
 ('Audit Logs', 13, 'COMPLETED', 3, 1),
-
 ('JWT Authentication', 5, 'COMPLETED', 1, 2),
 ('Kanban Drag Drop', 8, 'IN_PROGRESS', 2, 2),
 ('Kafka Integration', 13, 'BLOCKED', 3, 2),
@@ -51,8 +42,6 @@ VALUES
 ('Task Labels', 2, 'COMPLETED', 3, 3),
 ('Release Notes', 3, 'COMPLETED', 1, 3);
 
-
--- Seeding data for Pipeline table
 INSERT INTO pipeline (id, status, duration, commit_hash, branch, started_at, finished_at, project_id) VALUES
 (1, 'SUCCESS', 120, 'a1b2c3d4', 'main', NOW() - INTERVAL '29 days 4 hours', NOW() - INTERVAL '29 days 3 hours 58 minutes', NULL),
 (2, 'SUCCESS', 95, 'e5f6g7h8', 'develop', NOW() - INTERVAL '28 days 6 hours', NOW() - INTERVAL '28 days 5 hours 58 minutes', NULL),
@@ -125,8 +114,6 @@ INSERT INTO pipeline (id, status, duration, commit_hash, branch, started_at, fin
 (59, 'RUNNING', 0, 'y3z4a5b6', 'develop', NOW() - INTERVAL '30 minutes', NULL, NULL),
 (60, 'PENDING', 0, 'c7d8e9f0', 'feature/dashboard', NOW() - INTERVAL '10 minutes', NULL, NULL);
 
-
--- Seeding data for Deployment table
 INSERT INTO deployment (id, environment, success, deployed_at, pipeline_id) VALUES
 (1, 'PRODUCTION', true, NOW() - INTERVAL '29 days 3 hours 55 minutes', 1),
 (2, 'TESTING', true, NOW() - INTERVAL '28 days 5 hours 55 minutes', 2),
@@ -164,8 +151,6 @@ INSERT INTO deployment (id, environment, success, deployed_at, pipeline_id) VALU
 (30, 'TESTING', true, NOW() - INTERVAL '11 hours 55 minutes', 55),
 (31, 'PRODUCTION', true, NOW() - INTERVAL '5 hours 55 minutes', 56);
 
-
--- Seeding data for Release table
 INSERT INTO "release" (id, version, approved, release_date, deployment_id) VALUES
 (1, 'v1.0.0', true, NOW() - INTERVAL '29 days 3 hours 50 minutes', 1),
 (2, 'v1.1.0', true, NOW() - INTERVAL '27 days 1 hour 50 minutes', 4),

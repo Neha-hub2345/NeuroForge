@@ -91,3 +91,38 @@ docker compose down -v
 ## 5. Keycloak Configuration (do only if keycloak does not gets configured automatically)
 
 Open **http://localhost:8080** and do the configurations exactly as shown in the `Keycloak_Configuration_Runbook`.
+
+## 6. How to Push Your Code
+
+Direct pushes to the `main` branch are blocked. Please follow these steps to add your changes:
+
+**1. Pull the latest code**
+```bash
+git checkout main
+git pull origin main
+```
+
+**2. Create a new branch for your work**
+```
+git checkout -b feature/your-branch-name
+```
+
+**3. Make your changes and test them locally**
+```
+docker compose up --build
+```
+
+**4. Commit and push your branch**
+```
+git add .
+git commit -m "Add your commit message here"
+git push origin feature/your-branch-name
+```
+
+**5. Open a Pull Request (PR)**
+```
+Go to the GitHub repository.
+
+Click the Compare & pull request button.
+
+Once the automated checks pass, your code will be merged into main.

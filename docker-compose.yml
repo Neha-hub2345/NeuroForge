@@ -30,7 +30,7 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./keycloak/import:/opt/keycloak/data/import 
-      - ./keycloak-themes:/opt/keycloak/themes/neuroforge   # <-- add this
+      - ./keycloak-themes:/opt/keycloak/themes/neuroforge
   
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080 || exit 1"]
@@ -66,6 +66,18 @@ services:
       timeout: 5s
       retries: 15
       start_period: 300s
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: neuroforge-jenkins
+    privileged: true
+    user: root
+    ports:
+      - "9090:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
 
   backend:
     build:
@@ -105,3 +117,4 @@ volumes:
   postgres_data:
   keycloak_data:
   kafka_data:
+  jenkins_home:

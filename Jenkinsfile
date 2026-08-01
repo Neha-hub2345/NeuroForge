@@ -45,21 +45,24 @@ pipeline {
     
     post {
         failure {
-            script {
-                sh """
-                curl -X POST ${env.CONTROLLER_URL} \
-                     -H 'Content-Type: application/json' \
-                     -H "Authorization: Bearer ${env.API_TOKEN}" \
-                     -d '{
-                         "projectId": ${env.PROJECT_ID},
-                         "status": "FAILED",
-                         "duration": 120,
-                         "commitHash": "${env.GIT_COMMIT}",
-                         "branch": "${env.GIT_BRANCH}",
-                         "environment": "${env.ENV_NAME}",
-                         "deploymentSuccess": false
-                     }'
-                """
+            // Add the node block here to provide the workspace context
+            node {
+                script {
+                    sh """
+                    curl -X POST ${env.CONTROLLER_URL} \
+                         -H 'Content-Type: application/json' \
+                         -H "Authorization: Bearer ${env.API_TOKEN}" \
+                         -d '{
+                             "projectId": ${env.PROJECT_ID},
+                             "status": "FAILED",
+                             "duration": 120,
+                             "commitHash": "${env.GIT_COMMIT}",
+                             "branch": "${env.GIT_BRANCH}",
+                             "environment": "${env.ENV_NAME}",
+                             "deploymentSuccess": false
+                         }'
+                    """
+                }
             }
         }
     }

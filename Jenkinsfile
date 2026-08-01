@@ -45,9 +45,8 @@ pipeline {
     
     post {
         failure {
-            // Add the node block here to provide the workspace context
-            node {
-                script {
+            script {
+                node('') { // 'script' must be on the outside, and 'node' gets an empty string
                     sh """
                     curl -X POST ${env.CONTROLLER_URL} \
                          -H 'Content-Type: application/json' \

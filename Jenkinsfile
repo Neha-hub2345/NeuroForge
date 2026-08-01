@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         API_TOKEN = credentials('pipeline-controller-token')
-        CONTROLLER_URL = 'http://https://uneven-greedy-vendetta.ngrok-free.dev/api/pipelines/webhook'
+        CONTROLLER_URL = 'https://uneven-greedy-vendetta.ngrok-free.dev/api/pipelines/webhook'
         PROJECT_ID = '1'
         ENV_NAME = 'STAGING'
     }

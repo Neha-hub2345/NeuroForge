@@ -14,10 +14,14 @@ pipeline {
             }
         }
 
-        stage('Build') {
+        stage('Build & Run Docker') {
             steps {
-                // Using mvn.cmd to ensure Windows command prompt finds it
-                bat 'mvn.cmd clean package -DskipTests'
+                // Build the Docker image from your Dockerfile
+                bat 'docker build -t neuroforge-service .'
+                // Remove any existing container with this name to prevent port conflicts
+                bat 'docker rm -f neuroforge-container || true'
+                // Run the container on port 9000 so Ngrok can reach it
+                bat 'docker run -d -p 9000:9000 --name neuroforge-container neuroforge-service'
             }
         }
 

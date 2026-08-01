@@ -17,26 +17,20 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                // Changed to 'bat' for Windows
+                bat 'mvn clean package -DskipTests'
             }
         }
 
         stage('Notify API Controller') {
             steps {
                 script {
-                    sh """
-                    curl -X POST ${env.CONTROLLER_URL} \
-                         -H 'Content-Type: application/json' \
-                         -H "Authorization: Bearer ${env.API_TOKEN}" \
-                         -d '{
-                             "projectId": ${env.PROJECT_ID},
-                             "status": "SUCCESS",
-                             "duration": 120,
-                             "commitHash": "${env.GIT_COMMIT}",
-                             "branch": "${env.GIT_BRANCH}",
-                             "environment": "${env.ENV_NAME}",
-                             "deploymentSuccess": true
-                         }'
+                    // Changed to 'bat', used ^ for line breaks, and escaped double quotes for JSON
+                    bat """
+                    curl -X POST ${env.CONTROLLER_URL} ^
+                         -H "Content-Type: application/json" ^
+                         -H "Authorization: Bearer ${env.API_TOKEN}" ^
+                         -d "{\\"projectId\\": ${env.PROJECT_ID}, \\"status\\": \\"SUCCESS\\", \\"duration\\": 120, \\"commitHash\\": \\"${env.GIT_COMMIT}\\", \\"branch\\": \\"${env.GIT_BRANCH}\\", \\"environment\\": \\"${env.ENV_NAME}\\", \\"deploymentSuccess\\": true}"
                     """
                 }
             }
@@ -46,20 +40,13 @@ pipeline {
     post {
         failure {
             script {
-                node('') { // 'script' must be on the outside, and 'node' gets an empty string
-                    sh """
-                    curl -X POST ${env.CONTROLLER_URL} \
-                         -H 'Content-Type: application/json' \
-                         -H "Authorization: Bearer ${env.API_TOKEN}" \
-                         -d '{
-                             "projectId": ${env.PROJECT_ID},
-                             "status": "FAILED",
-                             "duration": 120,
-                             "commitHash": "${env.GIT_COMMIT}",
-                             "branch": "${env.GIT_BRANCH}",
-                             "environment": "${env.ENV_NAME}",
-                             "deploymentSuccess": false
-                         }'
+                node('') {
+                    // Changed to 'bat', used ^ for line breaks, and escaped double quotes for JSON
+                    bat """
+                    curl -X POST ${env.CONTROLLER_URL} ^
+                         -H "Content-Type: application/json" ^
+                         -H "Authorization: Bearer ${env.API_TOKEN}" ^
+                         -d "{\\"projectId\\": ${env.PROJECT_ID}, \\"status\\": \\"FAILED\\", \\"duration\\": 120, \\"commitHash\\": \\"${env.GIT_COMMIT}\\", \\"branch\\": \\"${env.GIT_BRANCH}\\", \\"environment\\": \\"${env.ENV_NAME}\\", \\"deploymentSuccess\\": false}"
                     """
                 }
             }

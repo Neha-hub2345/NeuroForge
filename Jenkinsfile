@@ -25,16 +25,16 @@ pipeline {
             steps {
                 script {
                     sh """
-                    curl -X POST ${CONTROLLER_URL} \
+                    curl -X POST ${env.CONTROLLER_URL} \
                          -H 'Content-Type: application/json' \
-                         -H "Authorization: Bearer ${API_TOKEN}" \
+                         -H "Authorization: Bearer ${env.API_TOKEN}" \
                          -d '{
-                             "projectId": ${PROJECT_ID},
+                             "projectId": ${env.PROJECT_ID},
                              "status": "SUCCESS",
                              "duration": 120,
                              "commitHash": "${env.GIT_COMMIT}",
                              "branch": "${env.GIT_BRANCH}",
-                             "environment": "${ENV_NAME}",
+                             "environment": "${env.ENV_NAME}",
                              "deploymentSuccess": true
                          }'
                     """
@@ -47,16 +47,16 @@ pipeline {
         failure {
             script {
                 sh """
-                curl -X POST ${CONTROLLER_URL} \
+                curl -X POST ${env.CONTROLLER_URL} \
                      -H 'Content-Type: application/json' \
-                     -H "Authorization: Bearer ${API_TOKEN}" \
+                     -H "Authorization: Bearer ${env.API_TOKEN}" \
                      -d '{
-                         "projectId": ${PROJECT_ID},
+                         "projectId": ${env.PROJECT_ID},
                          "status": "FAILED",
                          "duration": 120,
                          "commitHash": "${env.GIT_COMMIT}",
                          "branch": "${env.GIT_BRANCH}",
-                         "environment": "${ENV_NAME}",
+                         "environment": "${env.ENV_NAME}",
                          "deploymentSuccess": false
                      }'
                 """

@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        maven 'Maven 3'
+    }
+
     environment {
         CONTROLLER_URL = 'https://uneven-greedy-vendetta.ngrok-free.dev/api/pipelines/webhook'
         PROJECT_ID = '1'
@@ -14,13 +18,16 @@ pipeline {
             }
         }
 
-        stage('Build & Run Docker') {
+        stage('Build Jar') {
             steps {
-                // Build the Docker image from your Dockerfile
+                bat 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build & Run Docker Container') {
+            steps {
                 bat 'docker build -t neuroforge-service .'
-                // Remove any existing container with this name to prevent port conflicts
                 bat 'docker rm -f neuroforge-container || true'
-                // Run the container on port 9000 so Ngrok can reach it
                 bat 'docker run -d -p 9000:9000 --name neuroforge-container neuroforge-service'
             }
         }

@@ -20,13 +20,17 @@ pipeline {
 
         stage('Build Jar') {
             steps {
-                bat 'mvn clean package -DskipTests'
+                dir('Backend') {
+                    bat 'mvn clean package -DskipTests'
+                }
             }
         }
 
         stage('Build & Run Docker Container') {
             steps {
-                bat 'docker build -t neuroforge-service .'
+                dir('Backend') {
+                    bat 'docker build -t neuroforge-service .'
+                }
                 bat 'docker rm -f neuroforge-container || true'
                 bat 'docker run -d -p 9000:9000 --name neuroforge-container neuroforge-service'
             }

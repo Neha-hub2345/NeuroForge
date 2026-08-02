@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        CONTROLLER_URL = 'http://localhost:9000/api/pipelines/webhook'
+        CONTROLLER_URL = 'http://host.docker.internal:9000/api/pipelines/webhook'        
         PROJECT_ID = '1'
         ENV_NAME = 'STAGING'
     }

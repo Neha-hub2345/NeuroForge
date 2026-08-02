@@ -6,7 +6,8 @@ pipeline {
     }
 
     environment {
-        CONTROLLER_URL = 'https://uneven-greedy-vendetta.ngrok-free.dev/api/pipelines/webhook'
+        // Change this from the ngrok URL to localhost
+        CONTROLLER_URL = 'http://localhost:9000/api/pipelines/webhook'
         PROJECT_ID = '1'
         ENV_NAME = 'STAGING'
     }

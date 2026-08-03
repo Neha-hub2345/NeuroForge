@@ -32,21 +32,21 @@ pipeline {
                     sh 'docker build -t neuroforge-service .'
                 }
                 sh 'docker rm -f neuroforge-container || true'
-                sh 'docker run -d -p 9000:9000 --name neuroforge-container neuroforge-service'
+                sh 'docker run -d -p 9000:9000 --network neuroforge_default --name neuroforge-container neuroforge-service'
                 
-                // Add a small pause to let Spring Boot fully boot up
-                sh 'sleep 15'
+                // Add a small pause to let Spring Boot fully boot up and connect to Postgres
+                sh 'sleep 25'
             }
         }
 
         stage('Notify API Controller') {
             steps {
                 script {
-                    sh """
-                    curl -X POST ${env.CONTROLLER_URL} \\
-                         -H "Content-Type: application/json" \\
-                         -d "{\\"projectId\\": ${env.PROJECT_ID}, \\"status\\": \\"SUCCESS\\", \\"duration\\": 120, \\"commitHash\\": \\"${env.GIT_COMMIT}\\", \\"branch\\": \\"${env.GIT_BRANCH}\\", \\"environment\\": \\"${env.ENV_NAME}\\", \\"deploymentSuccess\\": true}"
-                    """
+                    sh '''
+                        curl -X POST http://host.docker.internal:9000/api/pipelines/webhook \
+                        -H "Content-Type: application/json" \
+                        -d '{"projectId": 1, "status": "SUCCESS", "duration": 120, "commitHash": "'"${env.GIT_COMMIT}"'", "branch": "origin/main", "environment": "STAGING", "deploymentSuccess": true}'
+                    '''
                 }
             }
         }

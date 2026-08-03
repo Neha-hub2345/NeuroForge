@@ -21,7 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.jenkins
-    container_name: jenkins
+    container_name: neuroforge-jenkins
     ports:
       - "9090:8080"
       - "50000:50000"

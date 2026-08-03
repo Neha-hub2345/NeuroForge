@@ -18,17 +18,17 @@ services:
       retries: 5
       start_period: 30s
 
+
   jenkins:
     image: jenkins/jenkins:lts
     container_name: jenkins
-    privileged: true
-    user: root
     ports:
       - "9090:8080"
       - "50000:50000"
     volumes:
-      - jenkins_home:/var/jenkins_home
+      - jenkins_volumes:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
+    user: root # Sometimes required so Jenkins has permission to access the socket
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
@@ -117,4 +117,4 @@ volumes:
   postgres_data:
   keycloak_data:
   kafka_data:
-  jenkins_home:
+  jenkins_volumes:

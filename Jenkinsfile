@@ -42,11 +42,11 @@ pipeline {
         stage('Notify API Controller') {
             steps {
                 script {
-                    sh '''
-                        curl -X POST http://host.docker.internal:9000/api/pipelines/webhook \
-                        -H "Content-Type: application/json" \
-                        -d '{"projectId": 1, "status": "SUCCESS", "duration": 120, "commitHash": "'"${env.GIT_COMMIT}"'", "branch": "origin/main", "environment": "STAGING", "deploymentSuccess": true}'
-                    '''
+                    sh """
+                        curl -X POST http://host.docker.internal:9000/api/pipelines/webhook \\
+                        -H 'Content-Type: application/json' \\
+                        -d '{"projectId": 1, "status": "SUCCESS", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "STAGING", "deploymentSuccess": true}'
+                    """
                 }
             }
         }
@@ -55,13 +55,11 @@ pipeline {
     post {
         failure {
             script {
-                node('') {
-                    sh """
-                    curl -X POST ${env.CONTROLLER_URL} \\
-                         -H "Content-Type: application/json" \\
-                         -d "{\\"projectId\\": ${env.PROJECT_ID}, \\"status\\": \\"FAILED\\", \\"duration\\": 120, \\"commitHash\\": \\"${env.GIT_COMMIT}\\", \\"branch\\": \\"${env.GIT_BRANCH}\\", \\"environment\\": \\"${env.ENV_NAME}\\", \\"deploymentSuccess\\": false}"
-                    """
-                }
+                sh """
+                    curl -X POST http://host.docker.internal:9000/api/pipelines/webhook \\
+                    -H 'Content-Type: application/json' \\
+                    -d '{"projectId": 1, "status": "FAILED", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "STAGING", "deploymentSuccess": false}'
+                """
             }
         }
     }

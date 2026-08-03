@@ -33,6 +33,9 @@ pipeline {
                 }
                 sh 'docker rm -f neuroforge-container || true'
                 sh 'docker run -d -p 9000:9000 --name neuroforge-container neuroforge-service'
+                
+                // Add a small pause to let Spring Boot fully boot up
+                sh 'sleep 15'
             }
         }
 

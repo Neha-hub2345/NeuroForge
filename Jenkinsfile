@@ -32,7 +32,7 @@ pipeline {
                     sh 'docker build -t neuroforge-service .'
                 }
                 sh 'docker rm -f neuroforge-container || true'
-                sh 'docker run -d -p 9000:9000 --network neuroforge_default --name neuroforge-container neuroforge-service'
+                sh 'docker run -d -p 9000:9000 --network neuroforge_default -e SPRING_DATASOURCE_URL=jdbc:postgresql://<NAME_OF_YOUR_POSTGRES_CONTAINER>:5432/<YOUR_DB_NAME> -e SPRING_DATASOURCE_USERNAME=postgres -e SPRING_DATASOURCE_PASSWORD=<YOUR_ACTUAL_PASSWORD> --name neuroforge-container neuroforge-service'
                 
                 // POSIX-compliant while loop for standard sh
                 sh '''

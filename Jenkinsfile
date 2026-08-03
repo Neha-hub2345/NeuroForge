@@ -6,10 +6,10 @@ pipeline {
     }
 
     environment {
-    CONTROLLER_URL = 'http://host.docker.internal:9000/api/pipelines/webhook'
-    PROJECT_ID = '1' // Change from '1' to a valid ID
-    ENV_NAME = 'STAGING'
-}
+        CONTROLLER_URL = 'http://host.docker.internal:9000/api/pipelines/webhook'
+        PROJECT_ID = '1'
+        ENV_NAME = 'STAGING'
+    }
 
     stages {
         stage('Checkout') {
@@ -33,8 +33,6 @@ pipeline {
                 }
                 sh 'docker rm -f neuroforge-container || true'
                 sh 'docker run -d -p 9000:9000 --network neuroforge_default --name neuroforge-container neuroforge-service'
-                
-                // Add a small pause to let Spring Boot fully boot up and connect to Postgres
                 sh 'sleep 25'
             }
         }
@@ -42,10 +40,13 @@ pipeline {
         stage('Notify API Controller') {
             steps {
                 script {
+                    def successPayload = """{"projectId": ${env.PROJECT_ID}, "status": "SUCCESS", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "${env.ENV_NAME}", "deploymentSuccess": true}"""
+                    writeFile file: 'success_payload.json', text: successPayload
+                    
                     sh """
-                        curl -X POST http://host.docker.internal:9000/api/pipelines/webhook \\
+                        curl -X POST ${env.CONTROLLER_URL} \\
                         -H 'Content-Type: application/json' \\
-                        -d '{"projectId": 1, "status": "SUCCESS", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "STAGING", "deploymentSuccess": true}'
+                        -d @success_payload.json
                     """
                 }
             }
@@ -55,10 +56,13 @@ pipeline {
     post {
         failure {
             script {
+                def failurePayload = """{"projectId": ${env.PROJECT_ID}, "status": "FAILED", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "${env.ENV_NAME}", "deploymentSuccess": false}"""
+                writeFile file: 'failure_payload.json', text: failurePayload
+                
                 sh """
-                    curl -X POST http://host.docker.internal:9000/api/pipelines/webhook \\
+                    curl -X POST ${env.CONTROLLER_URL} \\
                     -H 'Content-Type: application/json' \\
-                    -d '{"projectId": 1, "status": "FAILED", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "STAGING", "deploymentSuccess": false}'
+                    -d @failure_payload.json
                 """
             }
         }

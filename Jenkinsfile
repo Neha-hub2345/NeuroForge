@@ -5,17 +5,12 @@ pipeline {
         maven 'Maven 3'
     }
 
+    // Only ONE environment block is allowed here
     environment {
         CONTROLLER_URL = 'http://host.docker.internal:9000/api/pipelines/webhook'
         PROJECT_ID = '1'
         ENV_NAME = 'STAGING'
     }
-
-    environment {
-    CONTROLLER_URL = 'http://host.docker.internal:9000/api/pipelines/webhook'
-    PROJECT_ID = '1' // Change from '1' to a valid ID
-    ENV_NAME = 'STAGING'
-}
 
     stages {
         stage('Checkout') {

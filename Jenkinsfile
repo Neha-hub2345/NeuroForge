@@ -5,7 +5,6 @@ pipeline {
         maven 'Maven 3'
     }
 
-    // Only ONE environment block is allowed here
     environment {
         CONTROLLER_URL = 'http://host.docker.internal:9000/api/pipelines/webhook'
         PROJECT_ID = '1'
@@ -43,12 +42,7 @@ pipeline {
                 script {
                     def successPayload = """{"projectId": ${env.PROJECT_ID}, "status": "SUCCESS", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "${env.ENV_NAME}", "deploymentSuccess": true}"""
                     writeFile file: 'success_payload.json', text: successPayload
-                    
-                    sh """
-                        curl -X POST ${env.CONTROLLER_URL} \\
-                        -H 'Content-Type: application/json' \\
-                        -d @success_payload.json
-                    """
+                    sh 'curl -X POST $CONTROLLER_URL -H "Content-Type: application/json" -d @success_payload.json'
                 }
             }
         }
@@ -59,12 +53,7 @@ pipeline {
             script {
                 def failurePayload = """{"projectId": ${env.PROJECT_ID}, "status": "FAILED", "duration": 120, "commitHash": "${env.GIT_COMMIT}", "branch": "origin/main", "environment": "${env.ENV_NAME}", "deploymentSuccess": false}"""
                 writeFile file: 'failure_payload.json', text: failurePayload
-                
-                sh """
-                    curl -X POST ${env.CONTROLLER_URL} \\
-                    -H 'Content-Type: application/json' \\
-                    -d @failure_payload.json
-                """
+                sh 'curl -X POST $CONTROLLER_URL -H "Content-Type: application/json" -d @failure_payload.json'
             }
         }
     }

@@ -1,15 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { useProjectSprints } from '../hooks/useProjectSprints'
-import { blockerService } from '../services/blockerService'
-import SprintSelector from '../components/SprintSelector'
-import { Alert, EmptyState } from '../components/ui'
+import { blockerService } from '../../services/blockerService'
+import { Alert, EmptyState } from '../../components/ui'
 
 export default function Blockers() {
-  const {
-    projects, sprints, projectId, setProjectId, sprintId, setSprintId,
-    loadingSprints, error: pickerError
-  } = useProjectSprints()
+  const { sprints, sprintId, setSprintId, selectedSprint } = useOutletContext()
 
   const [blockers, setBlockers] = useState([])
   const [loading, setLoading] = useState(false)
@@ -45,23 +41,21 @@ export default function Blockers() {
       <div className="page-header">
         <div>
           <h1>Blockers</h1>
-          <p className="page-subtitle">
-            Flag and resolve stuck work 
-          </p>
+          <p className="page-subtitle">{selectedSprint ? `Flagged work in ${selectedSprint.name}` : 'Flag and resolve stuck work.'}</p>
         </div>
+        {sprints.length > 0 && (
+          <select className="inline-select" value={sprintId} onChange={(e) => setSprintId(e.target.value)}>
+            {sprints.map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
-      <Alert onClose={() => setError('')}>{error || pickerError}</Alert>
-
-      <div className="panel panel-tight">
-        <SprintSelector
-          projects={projects} projectId={projectId} setProjectId={setProjectId}
-          sprints={sprints} sprintId={sprintId} setSprintId={setSprintId} loadingSprints={loadingSprints}
-        />
-      </div>
+      <Alert onClose={() => setError('')}>{error}</Alert>
 
       {!sprintId ? (
-        <EmptyState title="No sprint selected" subtitle="Create a project and sprint in Milestone 1 first." />
+        <EmptyState title="No sprint selected" />
       ) : loading ? (
         <div className="empty-sub">Loading…</div>
       ) : (
@@ -71,7 +65,7 @@ export default function Blockers() {
               <h2>Open blockers ({open.length})</h2>
             </div>
             {open.length === 0 ? (
-              <EmptyState title="Nothing blocked right now" subtitle="Flag a task from the Kanban board when work gets stuck." />
+              <EmptyState title="Nothing blocked right now" subtitle="Flag a task from the Board when work gets stuck." />
             ) : (
               <ul className="list">
                 {open.map((b) => (

@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Plus, AlertTriangle, User, Trash2 } from 'lucide-react'
-import { useProjectSprints } from '../hooks/useProjectSprints'
-import { projectsApi } from '../api/projects'
-import { usersApi } from '../api/users'
-import { taskService } from '../services/taskService'
-import { blockerService } from '../services/blockerService'
-import { useAuth } from '../context/AuthContext'
-import { canManage } from '../utils/roles'
-import SprintSelector from '../components/SprintSelector'
-import { Alert, Modal, EmptyState } from '../components/ui'
+import { useOutletContext } from 'react-router-dom'
+import { Plus, AlertTriangle, Trash2 } from 'lucide-react'
+import { usersApi } from '../../api/users'
+import { taskService } from '../../services/taskService'
+import { blockerService } from '../../services/blockerService'
+import { useAuth } from '../../context/AuthContext'
+import { canManage } from '../../utils/roles'
+import { Alert, Modal, EmptyState } from '../../components/ui'
+import TaskDetailModal from '../../components/TaskDetailModal'
 
 const COLUMNS = [
   { key: 'TODO', label: 'To Do' },
@@ -16,14 +15,11 @@ const COLUMNS = [
   { key: 'DONE', label: 'Done' }
 ]
 
-export default function KanbanBoard() {
-  const {
-    projects, sprints, projectId, setProjectId, sprintId, sprintName, setSprintId,
-    selectedSprint, loadingSprints, error: pickerError
-  } = useProjectSprints()
-
+export default function Board() {
+  // ADDED sprints, setSprintId HERE
+  const { project, sprints, sprintId, setSprintId, selectedSprint } = useOutletContext()
   const { roles } = useAuth()
-  const canEditTeam = canManage(roles?.[0])
+  const canEdit = canManage(roles?.[0])
 
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
@@ -31,30 +27,14 @@ export default function KanbanBoard() {
   const [error, setError] = useState('')
   const [showCreate, setShowCreate] = useState(false)
   const [blockingTask, setBlockingTask] = useState(null)
+  const [openTask, setOpenTask] = useState(null)
   const [dragTaskId, setDragTaskId] = useState(null)
-  const [projectTeamName, setProjectTeamName] = useState(null)
 
   useEffect(() => {
     usersApi.getAll().then(setUsers).catch(() => {})
   }, [])
 
-  // Fetch project details and extract teamName
-  useEffect(() => {
-    if (!projectId) {
-      setProjectTeamName(null)
-      return
-    }
-    projectsApi.getById(projectId)
-      .then((proj) => {
-        setProjectTeamName(proj.teamName || null)
-      })
-      .catch(() => setProjectTeamName(null))
-  }, [projectId])
-
-  // Filter users based on whether their team name matches the project's teamName
-  const filteredUsers = projectTeamName
-    ? users.filter((u) => u.team?.name === projectTeamName || u.teamName === projectTeamName)
-    : users
+  const teamUsers = project?.teamName ? users.filter((u) => u.team?.name === project.teamName || u.teamName === project.teamName) : users
 
   useEffect(() => {
     if (!sprintId) {
@@ -73,37 +53,23 @@ export default function KanbanBoard() {
     }
   }, [sprintId])
 
+  const applyUpdate = (updated) => setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+
   const moveTask = async (taskId, status) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task && task.isBlocked) return // Prevent moving blocked tasks
-
+    const task = tasks.find((t) => t.id === taskId)
+    if (task?.isBlocked) return
     try {
-      const updated = await taskService.updateStatus(sprintId, taskId, status)
-      setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
+      applyUpdate(await taskService.updateStatus(sprintId, taskId, status))
     } catch (err) {
       setError(err.message)
     }
   }
 
-  // Handle Assignee Change
-  const handleAssign = async (taskId, userId) => {
-    const task = tasks.find(t => t.id === taskId)
-    if (task && task.isBlocked) return // Prevent changing assignee for blocked tasks
-
-    try {
-      const updated = await taskService.assignUser(sprintId, taskId, userId)
-      setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
-  // Handle Task Deletion
   const handleDelete = async (taskId) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
+    if (!window.confirm('Delete this task?')) return
     try {
-      await taskService.deleteTask(taskId);
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
+      await taskService.deleteTask(taskId)
+      setTasks((prev) => prev.filter((t) => t.id !== taskId))
     } catch (err) {
       setError(err.message)
     }
@@ -112,56 +78,57 @@ export default function KanbanBoard() {
   const handleDrop = (status) => (e) => {
     e.preventDefault()
     if (dragTaskId != null) {
-      const task = tasks.find(t => t.id === dragTaskId)
-      if (task && !task.isBlocked) {
-        moveTask(dragTaskId, status)
-      }
+      const task = tasks.find((t) => t.id === dragTaskId)
+      if (task && !task.isBlocked) moveTask(dragTaskId, status)
     }
     setDragTaskId(null)
   }
 
-  return (
+return (
     <div className="page">
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1>{selectedSprint ? selectedSprint.name || 'Sprint' : 'Kanban Board'}</h1>
-          <p className="page-subtitle">
-            {selectedSprint ? `Goal: ${selectedSprint.goal || 'No goal set'}` : 'Task management for the active sprint'}
-          </p>
+          <h1>{selectedSprint ? selectedSprint.name || 'Board' : 'Board'}</h1>
+          <p className="page-subtitle">{selectedSprint ? `Goal: ${selectedSprint.goal || 'No goal set'}` : 'Pick a sprint to see its board.'}</p>
         </div>
-        <button 
-          className="btn-primary" 
-          onClick={() => setShowCreate(true)} 
-          disabled={!sprintId || !canEditTeam}
-          title={!canEditTeam ? "Only Admins and Project Managers can create tasks" : ""}
-          style={!canEditTeam ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
-        >
-          <Plus size={16} /> New Task
-        </button>
+        
+        {/* ADDED SPRINT SELECTOR ALONGSIDE THE NEW TASK BUTTON */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="project-topbar-sprint" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Sprint:</span>
+            <select
+              className="inline-select"
+              value={sprintId || ''}
+              onChange={(e) => setSprintId(e.target.value)}
+              disabled={!sprints || sprints.length === 0}
+            >
+              {(!sprints || sprints.length === 0) && <option value="">No sprints yet</option>}
+              {sprints?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name ? `${s.name} — ${s.goal}` : s.goal}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <button className="btn-primary" onClick={() => setShowCreate(true)} disabled={!sprintId || !canEdit} title={!canEdit ? 'Only Admins and Project Managers can create tasks' : ''}>
+            <Plus size={16} /> New Task
+          </button>
+        </div>
       </div>
 
-      <Alert onClose={() => setError('')}>{error || pickerError}</Alert>
-
-      <div className="panel panel-tight">
-        <SprintSelector
-          projects={projects} projectId={projectId} setProjectId={setProjectId}
-          sprints={sprints} sprintName={sprintName} sprintId={sprintId} setSprintId={setSprintId} loadingSprints={loadingSprints}
-        />
-      </div>
+      <Alert onClose={() => setError('')}>{error}</Alert>
+      
+      {/* ... (Keep the rest of the file the same) ... */}
 
       {!sprintId ? (
-        <EmptyState title="No sprint selected" subtitle="Create a project and sprint first." />
+        <EmptyState title="No sprint selected" subtitle="Create a sprint under Sprints & Milestones first." />
       ) : (
         <div className="kanban-board">
           {COLUMNS.map((col) => {
             const colTasks = tasks.filter((t) => t.status === col.key)
             return (
-              <div
-                key={col.key}
-                className="kanban-column"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop(col.key)}
-              >
+              <div key={col.key} className="kanban-column" onDragOver={(e) => e.preventDefault()} onDrop={handleDrop(col.key)}>
                 <div className="kanban-column-header">
                   <span>{col.label}</span>
                   <span className="kanban-count">{colTasks.length}</span>
@@ -172,68 +139,36 @@ export default function KanbanBoard() {
                   {colTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="kanban-card"
+                      className={'kanban-card' + (task.isBlocked ? ' kanban-card-blocked' : '')}
                       draggable={!task.isBlocked}
                       onDragStart={() => !task.isBlocked && setDragTaskId(task.id)}
-                      style={task.isBlocked ? { borderLeft: '4px solid var(--danger, #ef4444)', backgroundColor: 'rgba(239, 68, 68, 0.05)' } : {}}
+                      onClick={() => setOpenTask(task)}
                     >
                       <div className="kanban-card-title">
-                        {task.isBlocked && <AlertTriangle size={14} style={{ display: 'inline', marginRight: '6px', color: 'var(--danger, #ef4444)' }} />}
+                        {task.isBlocked && <AlertTriangle size={14} className="kanban-card-blocked-icon" />}
                         {task.title}
                       </div>
                       <div className="kanban-card-meta">
                         <span className="points-badge">{task.points} pts</span>
+                        {task.assigneeId && (
+                          <span className="assignee-chip">{teamUsers.find((u) => u.id === task.assigneeId)?.username || `#${task.assigneeId}`}</span>
+                        )}
                       </div>
-                      
-                      <div className="kanban-card-actions" style={{ display: 'flex', gap: '8px', marginTop: '12px', flexWrap: 'wrap' }}>
-                        {/* Status Select - Disabled if blocked */}
+                      <div className="kanban-card-actions" onClick={(e) => e.stopPropagation()}>
                         <select
                           className="inline-select inline-select-sm"
                           value={task.status}
                           onChange={(e) => moveTask(task.id, e.target.value)}
                           disabled={task.isBlocked}
-                          title={task.isBlocked ? "Cannot modify status of a blocked task" : "Change status"}
                         >
                           {COLUMNS.map((c) => (
                             <option key={c.key} value={c.key}>{c.label}</option>
                           ))}
                         </select>
-
-                        {/* Assignee Select - Restricted to Admin/Project Manager */}
-                        <select
-                          className="inline-select inline-select-sm"
-                          value={task.assigneeId || ''}
-                          onChange={(e) => handleAssign(task.id, e.target.value)}
-                          disabled={task.isBlocked || !canEditTeam}
-                          title={!canEditTeam ? "Only Admins and Project Managers can assign tasks" : task.isBlocked ? "Cannot reassign a blocked task" : "Change Assignee"}
-                          style={!canEditTeam ? { opacity: 0.7, cursor: 'not-allowed' } : {}}
-                        >
-                          <option value="">Unassigned</option>
-                          {filteredUsers.map((u) => (
-                            <option key={u.id} value={u.id}>{u.username}</option>
-                          ))}
-                        </select>
-
-                        <div style={{ flex: 1 }}></div>
-
-                        {/* Block Button - Disabled if already blocked */}
-                        <button 
-                          className="btn-ghost-sm" 
-                          onClick={() => !task.isBlocked && setBlockingTask(task)} 
-                          disabled={task.isBlocked}
-                          title={task.isBlocked ? "Task is already blocked" : "Flag as blocked"}
-                          style={task.isBlocked ? { color: 'var(--danger, #ef4444)', opacity: 0.6, cursor: 'not-allowed' } : {}}
-                        >
+                        <button className="btn-ghost-sm" onClick={() => !task.isBlocked && setBlockingTask(task)} disabled={task.isBlocked} title="Flag as blocked">
                           <AlertTriangle size={14} />
                         </button>
-
-                        {/* Delete Button */}
-                        <button 
-                          className="btn-ghost-sm" 
-                          onClick={() => handleDelete(task.id)} 
-                          title="Delete task"
-                          style={{ color: 'var(--ink-soft)' }}
-                        >
+                        <button className="btn-ghost-sm" onClick={() => handleDelete(task.id)} title="Delete task">
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -248,13 +183,13 @@ export default function KanbanBoard() {
 
       {showCreate && (
         <CreateTaskModal
-          users={filteredUsers}
+          users={teamUsers}
+          sprintId={sprintId}
           onClose={() => setShowCreate(false)}
           onCreated={(task) => {
             setTasks((prev) => [task, ...prev])
             setShowCreate(false)
           }}
-          sprintId={sprintId}
         />
       )}
 
@@ -264,8 +199,23 @@ export default function KanbanBoard() {
           sprintId={sprintId}
           onClose={() => setBlockingTask(null)}
           onFlagged={() => {
-            setTasks(prev => prev.map(t => t.id === blockingTask.id ? { ...t, isBlocked: true } : t))
+            setTasks((prev) => prev.map((t) => (t.id === blockingTask.id ? { ...t, isBlocked: true } : t)))
             setBlockingTask(null)
+          }}
+        />
+      )}
+
+      {openTask && (
+        <TaskDetailModal
+          task={tasks.find((t) => t.id === openTask.id) || openTask}
+          sprintId={sprintId}
+          sprintName={selectedSprint?.name}
+          users={teamUsers}
+          canEdit={canEdit}
+          onClose={() => setOpenTask(null)}
+          onTaskChanged={(updated) => {
+            applyUpdate(updated)
+            setOpenTask(updated)
           }}
         />
       )}
@@ -275,6 +225,7 @@ export default function KanbanBoard() {
 
 function CreateTaskModal({ users, onClose, onCreated, sprintId }) {
   const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const [points, setPoints] = useState(3)
   const [assigneeId, setAssigneeId] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -289,7 +240,8 @@ function CreateTaskModal({ users, onClose, onCreated, sprintId }) {
         title: title.trim(),
         points: Number(points),
         assigneeId: assigneeId ? Number(assigneeId) : null,
-        status: 'TODO'
+        status: 'TODO',
+        description: description.trim() // Sends description straight to the backend
       })
       onCreated(task)
     } catch (err) {
@@ -306,6 +258,10 @@ function CreateTaskModal({ users, onClose, onCreated, sprintId }) {
         <label className="field">
           <span>Title</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} required autoFocus />
+        </label>
+        <label className="field">
+          <span>Description</span>
+          <textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What needs to be done…" />
         </label>
         <label className="field">
           <span>Story points</span>

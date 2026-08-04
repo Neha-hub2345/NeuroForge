@@ -80,6 +80,39 @@ services:
       retries: 15
       start_period: 300s
 
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: neuroforge-backend
+    ports:
+      - "9000:9000"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/neuroforge_nexus
+      DB_USERNAME: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/neuroforge-nexus/protocol/openid-connect/certs
+      KEYCLOAK_ISSUER: http://localhost:8080/realms/neuroforge-nexus
+      KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-unused}
+      KEYCLOAK_ADMIN_SERVER_URL: http://keycloak:8080
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: neuroforge-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 volumes:
   postgres_data:
   keycloak_data:

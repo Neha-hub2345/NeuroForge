@@ -30,10 +30,7 @@ pipeline {
                 script {
                     def msg = sh(script: 'git log -1 --pretty=%B', returnStdout: true).trim()
                     def hash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
-                    
-                    // Pulls the active branch or defaults safely to your current feature branch
-                    def branch = env.BRANCH_NAME ?: sh(script: "git symbolic-ref --short HEAD 2>/dev/null || echo 'feature/milestone3'", returnStdout: true).trim()
-
+                    def branch = env.BRANCH_NAME ?: sh(script: "git symbolic-ref --short HEAD 2>/dev/null || echo 'main'", returnStdout: true).trim()
                     writeFile file: 'git-info.txt', text: "${hash}|||${branch}|||${msg}"
                 }
             }

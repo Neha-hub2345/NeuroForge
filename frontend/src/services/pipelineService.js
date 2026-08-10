@@ -17,4 +17,5 @@ export const pipelineService = {
   getDetail: (id) => client.get(`/pipelines/${id}`).then((r) => r.data),
   triggerBuild: (projectId) => client.post(`/pipelines/trigger/${projectId}`).then((r) => r.data),
   rollbackBuild: (pipelineId) => client.post(`/pipelines/${pipelineId}/rollback`).then((r) => r.data)
+
 }

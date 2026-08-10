@@ -27,20 +27,53 @@ public class PipelineService {
     @Autowired private ProjectRepository projectRepository; // assumes this exists already
 
     // Called by the webhook when GitHub Actions finishes a build
-    public Pipeline recordBuildResult(PipelineWebhookRequest req) {
+public Pipeline recordBuildResult(PipelineWebhookRequest req) {
         Project project = projectRepository.findById(req.getProjectId())
                 .orElseThrow(() -> new IllegalArgumentException("No project found with id " + req.getProjectId()));
 
         Pipeline pipeline = new Pipeline();
         pipeline.setStatus(req.getStatus());
-        pipeline.setDuration(req.getDuration());
         pipeline.setCommitHash(req.getCommitHash());
         pipeline.setCommitMessage(req.getCommitMessage());
         pipeline.setBranch(req.getBranch());
         pipeline.setTriggerSource(req.getTriggerSource());
-        pipeline.setStartedAt(LocalDateTime.now().minusSeconds(req.getDuration()));
-        pipeline.setFinishedAt(LocalDateTime.now());
+        
+        // --- DURATION CALCULATION ---
+        // Total duration is still the sum of the individual stage durations,
+        // but those durations are now measured by the CI workflow itself
+        // (real elapsed seconds per stage) rather than hardcoded constants.
+        int totalDuration = 0;
+        if (req.getStages() != null) {
+            totalDuration = req.getStages().stream()
+                    .mapToInt(s -> s.durationSeconds)
+                    .sum();
+        }
+
+        pipeline.setDuration(totalDuration);
+
+        // Snapshot "now" exactly once so finishedAt and any fallback math
+        // below are internally consistent instead of drifting between two
+        // separate now() calls.
+        LocalDateTime finishedAt = LocalDateTime.now();
+        pipeline.setFinishedAt(finishedAt);
+
+        // FIX: prefer the real pipeline start time the CI workflow sends.
+        // Only fall back to reconstructing it from totalDuration if the
+        // caller didn't provide one (e.g. an older/manual webhook call) —
+        // previously this backdating was the *only* path, which made
+        // startedAt a pure function of totalDuration and meant
+        // finishedAt - startedAt always trivially equaled the (fake)
+        // duration instead of reflecting a real elapsed time.
+        if (req.getStartedAt() != null) {
+            pipeline.setStartedAt(req.getStartedAt());
+        } else {
+            pipeline.setStartedAt(finishedAt.minusSeconds(totalDuration));
+        }
+        // --------------------------------------
+
         pipeline.setProject(project);
+
+
 
         if (req.getStages() != null) {
             int order = 0;
@@ -210,10 +243,15 @@ public class PipelineService {
         projectRepository.findById(projectId)
                 .orElseThrow(() -> new IllegalArgumentException("No project found with id " + projectId));
 
-        // 2. Dispatch the GitHub Actions workflow with the normal (non-rollback) inputs
+        // 2. Dispatch the GitHub Actions workflow with the normal (non-rollback)
+        //    inputs. FIX: project_id used to be omitted here entirely, so every
+        //    triggered build fell back to the workflow's default ('1') and got
+        //    recorded against Project 1 no matter which project's dashboard the
+        //    trigger actually came from.
         dispatchWorkflow(Map.of(
                 "rollback", "false",
-                "image_tag", ""
+                "image_tag", "",
+                "project_id", String.valueOf(projectId)
         ));
     }
 
@@ -239,10 +277,14 @@ public class PipelineService {
                         pipeline.getProject().getId(), env, pipeline.getId())
                 .orElseThrow(() -> new IllegalStateException("No previous successful deployment found to roll back to."));
 
-        // 3. Dispatch the workflow in rollback mode, telling it which image tag to redeploy
+        // 3. Dispatch the workflow in rollback mode, telling it which image tag
+        //    to redeploy. FIX: same project_id omission as triggerJenkinsBuild
+        //    — without it, a rollback triggered from any project's dashboard
+        //    was silently reported against Project 1.
         dispatchWorkflow(Map.of(
                 "rollback", "true",
-                "image_tag", previousGood.getImageTag()
+                "image_tag", previousGood.getImageTag(),
+                "project_id", String.valueOf(pipeline.getProject().getId())
         ));
     }
 

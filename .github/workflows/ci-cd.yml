@@ -1,20 +1,122 @@
-name: NeuroForge-payment-service-ci
+name: NeuroForge-payment-service-ci-cd
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      rollback:
+        description: 'Redeploy a previous image instead of building a new one'
+        type: boolean
+        default: false
+      image_tag:
+        description: 'Image tag to redeploy when rollback=true (e.g. the git SHA)'
+        required: false
+        type: string
+      project_id:
+        description: 'NeuroForge project ID this build belongs to'
+        required: false
+        type: string
+        default: '1'
+      environment:
+        description: 'Deployment environment'
+        required: false
+        type: string
+        default: 'STAGING'
+
+env:
+  # FIX: these used to be hardcoded literals (PROJECT_ID: 1, ENV_NAME: STAGING),
+  # so every build/rollback reported back the same project/env no matter which
+  # project actually triggered it. Now they come from the workflow_dispatch
+  # inputs the backend sends, and only fall back to defaults for a plain
+  # `git push` (which has no inputs to read from).
+  PROJECT_ID: ${{ github.event.inputs.project_id || '1' }}
+  ENV_NAME: ${{ github.event.inputs.environment || 'STAGING' }}
+
+permissions:
+  contents: read
+  actions: read   # needed to query the Jobs API for the real job start time
+  packages: write
 
 jobs:
-  build-and-test:
+  build-test-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ./Backend
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: neuroforge_nexus
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d neuroforge_nexus"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
+      - name: Record pipeline start
+        id: pipeline_timer
+        working-directory: .
+        run: |
+          echo "start_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+          echo "start_iso=$(date -u +%Y-%m-%dT%H:%M:%S)" >> "$GITHUB_OUTPUT"
+
+      - name: Get real job start time
+        id: job_start
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Our own timer above only starts once THIS step runs — but GitHub
+          # spends real time before that on runner setup + spinning up the
+          # postgres service container, which is why the frontend duration
+          # was running ~30-40s short of what GitHub reports. The Jobs API
+          # knows the job's true started_at (including that setup time), so
+          # pull it directly instead of approximating.
+          RESP=$(curl -s -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs")
+
+          STARTED_AT=$(echo "$RESP" | jq -r --arg name "${{ github.job }}" '[.jobs[] | select(.name==$name)][0].started_at // empty')
+
+          if [ -z "$STARTED_AT" ] || [ "$STARTED_AT" = "null" ]; then
+            # Fallback if the Jobs API hasn't indexed this run yet — don't
+            # fail the whole build over a timing report.
+            STARTED_AT="${{ steps.pipeline_timer.outputs.start_iso }}"
+          else
+            # The API returns e.g. "2026-08-10T05:10:18Z". Strip the trailing
+            # Z so it matches java.time.LocalDateTime's expected
+            # "yyyy-MM-ddTHH:mm:ss" format on the backend — sending the Z
+            # through would make Jackson fail to deserialize startedAt.
+            STARTED_AT="${STARTED_AT%Z}"
+          fi
+
+          EPOCH=$(date -u -d "${STARTED_AT}Z" +%s 2>/dev/null || echo "${{ steps.pipeline_timer.outputs.start_epoch }}")
+          echo "real_start_iso=$STARTED_AT" >> "$GITHUB_OUTPUT"
+          echo "real_start_epoch=$EPOCH" >> "$GITHUB_OUTPUT"
+
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # needed so `git log`/`git rev-parse` behave like they did in Jenkins
+
+      - name: Capture git info
+        id: gitinfo
+        run: |
+          echo "hash=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "branch=${GITHUB_REF#refs/heads/}" >> "$GITHUB_OUTPUT"
+          echo "msg=$(git log -1 --pretty=%B | tr '\n' ' ' | sed 's/"/\\"/g')" >> "$GITHUB_OUTPUT"
+
+      - name: Checkpoint - checkout done
+        id: checkout_timer
+        run: echo "end_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 25
         uses: actions/setup-java@v4
@@ -23,9 +125,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build with Maven
+      - name: Build, test, coverage
         working-directory: ./Backend
-        run: mvn clean verify -DskipTests
+        env:
+          DB_URL: jdbc:postgresql://localhost:5433/neuroforge_nexus
+          DB_USERNAME: postgres
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: mvn clean test jacoco:report package
 
       - name: SonarQube Quality Gate Simulation
         working-directory: ./Backend
@@ -33,7 +139,175 @@ jobs:
           echo "Executing static code analysis..."
           echo "Bugs: 0 | Vulnerabilities: 0 | Code Smells: 2"
           echo "Quality Gate Status: PASSED"
-          echo "Sonar ✓"
 
-      - name: Trigger Jenkins Webhook
-        run: curl -vs "${{ secrets.NGROK_URL }}/generic-webhook-trigger/invoke?token=NeuroForge-2026"
+      - name: Checkpoint - build & test done
+        id: build_timer
+        run: echo "end_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Set image tag
+        id: image
+        run: |
+          if [ "${{ github.event.inputs.rollback }}" = "true" ]; then
+            echo "tag=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "repo=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        if: github.event.inputs.rollback != 'true'
+        working-directory: ./Backend
+        run: docker build -t ghcr.io/${{ steps.image.outputs.repo }}:${{ steps.image.outputs.tag }} .
+
+      - name: Push Docker image
+        if: github.event.inputs.rollback != 'true'
+        run: docker push ghcr.io/${{ steps.image.outputs.repo }}:${{ steps.image.outputs.tag }}
+
+      - name: Pull previous image (rollback)
+        if: github.event.inputs.rollback == 'true'
+        run: docker pull ghcr.io/${{ steps.image.outputs.repo }}:${{ steps.image.outputs.tag }}
+
+      - name: Checkpoint - docker build/push done
+        id: docker_timer
+        run: echo "end_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Run container
+        run: |
+          docker run -d -p 9001:9000 \
+            -e DB_URL=jdbc:postgresql://host.docker.internal:5433/neuroforge_nexus \
+            -e DB_USERNAME=postgres \
+            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            --add-host=host.docker.internal:host-gateway \
+            --name neuroforge-container \
+            ghcr.io/${{ steps.image.outputs.repo }}:${{ steps.image.outputs.tag }}
+
+      - name: Health check
+        id: healthcheck
+        run: |
+          for i in $(seq 1 15); do
+            if curl -s http://localhost:9001/ > /dev/null; then
+              echo "API is up!"
+              exit 0
+            fi
+            echo "Attempt $i failed. Waiting 5 seconds..."
+            sleep 5
+          done
+          echo "API failed to start in time."
+          exit 1
+
+      - name: Checkpoint - deploy & health check done
+        id: deploy_timer
+        if: always()
+        run: echo "end_epoch=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+      - name: Compute stage durations
+        id: durations
+        if: always()
+        run: |
+          START=${{ steps.job_start.outputs.real_start_epoch }}
+          CHECKOUT_END=${{ steps.checkout_timer.outputs.end_epoch }}
+          BUILD_END=${{ steps.build_timer.outputs.end_epoch }}
+          DOCKER_END=${{ steps.docker_timer.outputs.end_epoch }}
+          DEPLOY_END=${{ steps.deploy_timer.outputs.end_epoch || steps.docker_timer.outputs.end_epoch }}
+
+          echo "checkout=$(( CHECKOUT_END - START ))" >> "$GITHUB_OUTPUT"
+          echo "build=$(( BUILD_END - CHECKOUT_END ))" >> "$GITHUB_OUTPUT"
+          echo "docker=$(( DOCKER_END - BUILD_END ))" >> "$GITHUB_OUTPUT"
+          echo "deploy=$(( DEPLOY_END - DOCKER_END ))" >> "$GITHUB_OUTPUT"
+
+      - name: Collect container stats
+        id: stats
+        if: always()
+        run: |
+          RUNNING=$(docker inspect -f '{{.State.Running}}' neuroforge-container 2>/dev/null || echo "false")
+          if [ "$RUNNING" = "true" ]; then
+            RAW=$(docker stats neuroforge-container --no-stream --format "{{.CPUPerc}},{{.MemPerc}}" | tr -d '%')
+            echo "cpu=$(echo $RAW | cut -d',' -f1)" >> "$GITHUB_OUTPUT"
+            echo "mem=$(echo $RAW | cut -d',' -f2)" >> "$GITHUB_OUTPUT"
+            echo "running=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "cpu=0.0" >> "$GITHUB_OUTPUT"
+            echo "mem=0.0" >> "$GITHUB_OUTPUT"
+            echo "running=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Parse test results
+        id: tests
+        if: always()
+        run: |
+          STATS=$(awk '
+            /<testsuite/ {
+              for(i=1;i<=NF;i++){
+                if($i ~ /^tests=/){split($i,a,"\"");t=a[2]}
+                if($i ~ /^failures=/){split($i,a,"\"");f=a[2]}
+                if($i ~ /^errors=/){split($i,a,"\"");e=a[2]}
+                if($i ~ /^skipped=/){split($i,a,"\"");s=a[2]}
+              }
+              total+=t; fail+=(f+e); skip+=s
+            }
+            END{print total","fail","skip}
+          ' target/surefire-reports/TEST-*.xml || echo "0,0,0")
+          echo "total=$(echo $STATS | cut -d',' -f1)" >> "$GITHUB_OUTPUT"
+          echo "failed=$(echo $STATS | cut -d',' -f2)" >> "$GITHUB_OUTPUT"
+          echo "skipped=$(echo $STATS | cut -d',' -f3)" >> "$GITHUB_OUTPUT"
+
+      - name: Parse coverage
+        id: coverage
+        if: always()
+        run: |
+          COV=$(awk -F"," '{instructions+=$4+$5; covered+=$5} END{if(instructions>0) print (covered/instructions)*100; else print 0}' target/site/jacoco/jacoco.csv 2>/dev/null || echo "0.0")
+          echo "percent=$COV" >> "$GITHUB_OUTPUT"
+
+      - name: Send webhook to controller
+        if: always()
+        run: |
+          STATUS="${{ job.status == 'success' && 'SUCCESS' || 'FAILED' }}"
+          curl -s -X POST "${{ secrets.CONTROLLER_URL }}" \
+            -H "Content-Type: application/json" \
+            -d @- <<EOF
+          {
+            "projectId": ${{ env.PROJECT_ID }},
+            "status": "$STATUS",
+            "commitHash": "${{ steps.gitinfo.outputs.hash }}",
+            "commitMessage": "${{ steps.gitinfo.outputs.msg }}",
+            "branch": "${{ steps.gitinfo.outputs.branch }}",
+            "triggerSource": "GITHUB_ACTIONS",
+            "environment": "${{ env.ENV_NAME }}",
+            "deploymentSuccess": ${{ job.status == 'success' }},
+            "startedAt": "${{ steps.job_start.outputs.real_start_iso }}",
+            "testSummary": {
+              "passed": $(( ${{ steps.tests.outputs.total || 0 }} - ${{ steps.tests.outputs.failed || 0 }} - ${{ steps.tests.outputs.skipped || 0 }} )),
+              "failed": ${{ steps.tests.outputs.failed || 0 }},
+              "skipped": ${{ steps.tests.outputs.skipped || 0 }},
+              "coveragePercent": ${{ steps.coverage.outputs.percent || 0 }}
+            },
+            "deploymentInfo": {
+              "imageTag": "${{ steps.image.outputs.tag }}",
+              "podsRunning": ${{ steps.stats.outputs.running || 0 }},
+              "podsTotal": 1,
+              "cpuPercent": ${{ steps.stats.outputs.cpu || 0 }},
+              "memoryPercent": ${{ steps.stats.outputs.mem || 0 }}
+            },
+            "stages": [
+              { "name": "Setup & Checkout", "status": "SUCCESS", "durationSeconds": ${{ steps.durations.outputs.checkout || 0 }} },
+              { "name": "Build & Test", "status": "$STATUS", "durationSeconds": ${{ steps.durations.outputs.build || 0 }} },
+              { "name": "Docker Build & Push", "status": "$STATUS", "durationSeconds": ${{ steps.durations.outputs.docker || 0 }} },
+              { "name": "Deploy & Health Check", "status": "$STATUS", "durationSeconds": ${{ steps.durations.outputs.deploy || 0 }} }
+            ]
+          }
+          EOF
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment failed — tearing down bad container."
+          docker rm -f neuroforge-container || true
+          # To auto-redeploy the last good SHA, store it (e.g. in a repo variable or
+          # your controller) after each successful run, then pull/run that tag here.

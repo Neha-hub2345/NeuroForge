@@ -84,6 +84,9 @@ docker compose down -v
 | **Frontend UI** | http://localhost:5173 |
 | **Backend API** | http://localhost:9000 |
 | **Keycloak Admin Console** | http://localhost:8080 |
+| **Prometheus** | http://localhost:9090 |
+| **Grafana** | http://localhost:3000 |
+| **Kibana** | http://localhost:5601 |
 
 
 ---

@@ -753,13 +753,17 @@ a { color: inherit; }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
   padding: 20px;
+}
+[data-theme="light"] .modal-overlay {
+  background: rgba(244, 248, 248, 0.5);
+  backdrop-filter: blur(6px);
 }
 .modal {
   background: var(--surface);

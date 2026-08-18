@@ -3,7 +3,6 @@
 NeuroForge Nexus is an Agile project management platform featuring Kanban boards, sprint tracking, blocker management, and real-time event-driven notifications powered by Kafka. 
 
 
-
 This repository contains the full-stack Dockerized application (Spring Boot + React + Keycloak + PostgreSQL).
 
 ---

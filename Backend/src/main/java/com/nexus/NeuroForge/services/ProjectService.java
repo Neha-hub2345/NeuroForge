@@ -94,15 +94,17 @@ public class ProjectService {
                 .orElseThrow(() -> new EntityNotFoundException("Project not found: " + id));
     }
 
-    private ProjectResponse toResponse(Project p) {
+ private ProjectResponse toResponse(Project p) {
 
-        ProjectResponse response = new ProjectResponse();
-        response.setId(p.getId());
-        response.setName(p.getName());
-        response.setStatus(p.getStatus());
-        response.setTeamName(p.getTeam() != null ? p.getTeam().getName() : "Unassigned");        response.setManagerUsername(p.getManager() != null ? p.getManager().getUsername() : null);
-        response.setCreatedAt(p.getCreatedAt());
-        return response;
+    ProjectResponse response = new ProjectResponse();
+    response.setId(p.getId());
+    response.setName(p.getName());
+    response.setStatus(p.getStatus());
+    response.setTeamId(p.getTeam() != null ? p.getTeam().getId() : null);
+    response.setTeamName(p.getTeam() != null ? p.getTeam().getName() : "Unassigned");
+    response.setManagerUsername(p.getManager() != null ? p.getManager().getUsername() : null);
+    response.setCreatedAt(p.getCreatedAt());
+    return response;
 
-    }
+}
 }

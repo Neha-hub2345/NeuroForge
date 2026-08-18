@@ -9,6 +9,7 @@ public class ProjectResponse {
     private String name;
     private ProjectStatus status;
     private String teamName;
+    private Long teamId;
     private String managerUsername;
     private LocalDate createdAt;
 
@@ -17,6 +18,14 @@ public class ProjectResponse {
     }
 
     public ProjectResponse() {
+    }
+
+    public Long getTeamId() {
+        return teamId;
+    }
+
+    public void setTeamId(Long teamId) {
+        this.teamId = teamId;
     }
 
     public void setId(Long id) {

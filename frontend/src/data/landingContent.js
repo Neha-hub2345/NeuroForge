@@ -35,7 +35,8 @@ export const STATS = [
 ]
 
 export const TESTIMONIALS = [
-  { name: 'Asha R.', role: 'Project Manager', quote: 'Standing up a new project and staffing the team takes minutes instead of a spreadsheet.' },
+  { name: 'Namita',role:'Frontend Lead',quote:'Crafting responsive interfaces and intuitive component architecture made delivering an effortless user experience seamless.'},
+  {name:'Sanika',role:'Frontend Lead',quote:'Architecting scalable frontend components and responsive layouts allowed our team to iterate rapidly without sacrificing UI performance.'},
   { name: 'Neha K.', role: 'Backend Architect', quote: 'The service-layer boundary meant the frontend team could build ahead without ever touching our APIs.' },
   { name: 'Jashanpreet S.', role: 'Server & Security Lead', quote: 'Kafka events flow cleanly from task updates straight through to the notification feed.' }
 ]

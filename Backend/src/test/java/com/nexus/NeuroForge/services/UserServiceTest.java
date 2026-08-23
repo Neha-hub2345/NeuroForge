@@ -1,10 +1,11 @@
 package com.nexus.NeuroForge.services;
 
-import com.nexus.NeuroForge.dto.UserResponse;
-import com.nexus.NeuroForge.models.User;
+import com.nexus.NeuroForge.dto.user.UserResponse;
+import com.nexus.NeuroForge.models.user.User;
 import com.nexus.NeuroForge.models.interfaces.Role;
-import com.nexus.NeuroForge.repositories.TeamRepository;
-import com.nexus.NeuroForge.repositories.UserRepository;
+import com.nexus.NeuroForge.repositories.team.TeamRepository;
+import com.nexus.NeuroForge.repositories.user.UserRepository;
+import com.nexus.NeuroForge.services.user.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -8,6 +8,7 @@ import { canManage } from '../../utils/roles'
 import PipelineKpiStats from '../../components/pipeline/PipelineKpiStats'
 import BuildsTable from '../../components/pipeline/BuildsTable'
 import BuildDetailModal from '../../components/pipeline/BuildDetailModal'
+import LiveBuildLogsPanel from '../../components/pipeline/LiveBuildLogsPanel'
 
 export default function PipelineDashboard() {
 
@@ -18,15 +19,16 @@ export default function PipelineDashboard() {
   const {
     kpis, builds, loading, error, setError,
     selectedBuildId, setSelectedBuildId, buildDetails, loadingDetails,
-    triggering, rollingBack, triggerBuild, rollbackBuild
-  } = usePipelineDashboard()
+    triggering, rollingBack, triggerBuild, rollbackBuild,
+    liveStatus, liveTracking
+  } = usePipelineDashboard(project?.id)
 
   const [success, setSuccess] = useState('')
 
   const handleTrigger = async () => {
     setSuccess('')
     const ok = await triggerBuild(project.id)
-    if (ok) setSuccess('Build triggered - it will appear here once GitHub Actions reports back.')
+    if (ok) setSuccess('Build triggered - streaming its logs below as it runs.')
   }
 
   const handleRollback = async (pipelineId) => {
@@ -48,10 +50,10 @@ export default function PipelineDashboard() {
           <button
             className="btn-primary"
             onClick={handleTrigger}
-            disabled={triggering || !project?.id}
+            disabled={triggering || liveTracking || !project?.id}
             title={!project?.id ? 'Loading project...' : 'Dispatch a new CI/CD build for this project'}
           >
-            <Rocket size={16} /> {triggering ? 'Triggering...' : 'Trigger build'}
+            <Rocket size={16} /> {triggering ? 'Triggering...' : liveTracking ? 'Build running...' : 'Trigger build'}
           </button>
         )}
       </div>
@@ -59,6 +61,10 @@ export default function PipelineDashboard() {
       {error && <Alert onClose={() => setError('')}>{error}</Alert>}
       {/* Added the success toast/alert here */}
       {success && <Alert type="success" onClose={() => setSuccess('')}>{success}</Alert>}
+
+      {liveTracking && (
+        <LiveBuildLogsPanel status={liveStatus} waiting={!liveStatus} />
+      )}
 
       {loading || !kpis ? (
         <EmptyState title="Loading pipeline data…" />
@@ -84,6 +90,8 @@ export default function PipelineDashboard() {
           canEdit={canEdit}
           onRollback={handleRollback}
           rollingBack={rollingBack}
+          projectId={project?.id}
+
         />
       )}
     </div>

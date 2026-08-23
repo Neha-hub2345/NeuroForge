@@ -1,0 +1,15 @@
+# Tells Grafana to load any dashboard JSON dropped into ./json (mounted
+# alongside this file) into a "NeuroForge" folder, and to pick up edits to
+# those files without a restart (updateIntervalSeconds).
+apiVersion: 1
+
+providers:
+  - name: 'NeuroForge'
+    orgId: 1
+    folder: 'NeuroForge'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json

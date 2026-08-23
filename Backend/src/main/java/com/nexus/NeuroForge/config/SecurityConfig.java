@@ -42,10 +42,20 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfig.corsConfigurationSource()))
-                
-                // Only this line allows the webhook through without token validation
+
+                // CHANGED (M4 step 8): the Render deploy webhook
+                // (/api/render/deploy-webhook, added in step 3) was missing
+                // from this list. Render calls this endpoint with only its
+                // HMAC signature — no Keycloak JWT — so without permitAll
+                // here, anyRequest().authenticated() rejects it with 401
+                // before RenderWebhookController's own HMAC validation ever
+                // runs. It's still protected: the controller does its own
+                // signature check against the project's webhookSecret, same
+                // as the pipeline webhook — this just lets the request
+                // reach that check instead of dying at the security filter.
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/pipelines/webhook").permitAll()
+                        .requestMatchers("/api/render/deploy-webhook").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         .anyRequest().authenticated()
                 )

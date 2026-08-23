@@ -38,17 +38,7 @@ export default function Users() {
     load()
   }, [])
 
-  const handleRoleChange = async (u, role) => {
-    setError('')
-    try {
-      const updated = await usersApi.assignRole(u.id, role)
-      setUsers((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
-    } catch (err) {
-      setError(err.message)
-    }
-  }
-
- const handleTeamChange = async (u, teamId) => {
+  const handleTeamChange = async (u, teamId) => {
     setError('');
     // 1. Optimistic Update: Update the UI immediately so it doesn't feel sluggish
     const originalUsers = [...users];
@@ -94,7 +84,7 @@ export default function Users() {
         <div>
           <h1>Users</h1>
           <p className="page-subtitle">
-            {isAdmin ? 'Manage roles and team assignments across the platform.' : 'Everyone registered on NeuroForge Nexus.'}
+            {isAdmin ? 'Manage team assignments across the platform.' : 'Everyone registered on NeuroForge Nexus.'}
           </p>
         </div>
       </div>
@@ -151,21 +141,8 @@ export default function Users() {
                   </td>
                   <td>{u.email}</td>
                   <td>
-                    {isAdmin ? (
-                      <select
-                        className="inline-select"
-                        value={u.role || ''}
-                        onChange={(e) => handleRoleChange(u, e.target.value)}
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r} value={r}>
-                            {roleLabel(r)}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      roleLabel(u.role)
-                    )}
+                    {/* Role is now strictly read-only for everyone */}
+                    {roleLabel(u.role)}
                   </td>
                   <td>
                     {isAdmin ? (

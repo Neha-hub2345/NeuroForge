@@ -4,6 +4,7 @@ import { useDashboardData } from '../hooks/useDashboardData'
 import WorkspaceStats from '../components/dashboard/WorkspaceStats'
 import RecentProjectsPanel from '../components/dashboard/RecentProjectsPanel'
 import AnalyticsPanel from '../components/dashboard/AnalyticsPanel'
+import AiAssistantPanel from '../components/dashboard/AiAssistantPanel'   // NEW
 
 export default function Dashboard() {
   const { username, roles } = useAuth()
@@ -34,6 +35,8 @@ export default function Dashboard() {
         activeCount={activeCount}
         roles={roles}
       />
+      
+      <AiAssistantPanel />
 
       <RecentProjectsPanel loading={loading} recentProjects={recentProjects} />
 

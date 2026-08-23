@@ -44,6 +44,7 @@
   --info-soft: rgba(56, 189, 248, 0.15);
   --teal: #2dd4bf;
   --teal-soft: rgba(45, 212, 191, 0.15);
+   --modal-overlay-bg: rgba(0, 0, 0, 0.6);
 
   /* Sidebar */
   --sidebar-bg: #070b0e;
@@ -109,6 +110,7 @@
 
   --shadow: 0 1px 2px rgba(15, 30, 28, 0.05), 0 12px 28px rgba(15, 30, 28, 0.07);
   --shadow-glow: 0 0 0 1px rgba(13, 148, 136, 0.12), 0 8px 24px rgba(13, 148, 136, 0.10);
+  --modal-overlay-bg: rgba(15, 28, 27, 0.55);
 
   color-scheme: light;
 }
@@ -599,6 +601,51 @@ a { color: inherit; }
 }
 
 .panel-tight { padding: 14px 20px; margin-bottom: 20px; }
+
+/* RecentLogsPanel */
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 12.5px;
+}
+
+.log-line {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 4px;
+}
+
+.log-line:hover { background: var(--surface-2); }
+
+.log-line-time {
+  color: var(--ink-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.log-line-level {
+  font-weight: 650;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 46px;
+}
+
+.log-line-message {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.log-list-loading {
+  color: var(--ink-faint);
+  font-size: 13px;
+  padding: 12px 0;
+}
 
 .panel-header {
   display: flex;
@@ -1523,7 +1570,7 @@ a { color: inherit; }
 .bd-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--modal-overlay-bg);
   z-index: 9999;
   display: flex;
   align-items: center;
@@ -1929,4 +1976,88 @@ a { color: inherit; }
 
 @media (max-width: 520px) {
   h1 { font-size: 22px; }
+}
+
+/* --- Live build logs (streamed while a triggered build is running) --- */
+.live-log-panel {
+  margin: 18px 0;
+  padding: 0;
+  overflow: hidden;
+  animation: fadeIn 0.3s ease both;
+}
+
+.live-log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.live-log-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.live-log-spinner {
+  color: var(--hold);
+  animation: spin 1s linear infinite;
+}
+
+.live-log-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+.live-log-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.live-log-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--info);
+  text-decoration: none;
+}
+.live-log-link:hover { text-decoration: underline; }
+
+.live-log-body {
+  max-height: 420px;
+  overflow-y: auto;
+  background: #0b0f13;
+}
+
+.live-log-pre {
+  margin: 0;
+  padding: 16px 18px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #d7e0e4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.live-log-empty {
+  margin: 0;
+  padding: 24px 18px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

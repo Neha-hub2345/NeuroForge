@@ -1,8 +1,8 @@
 package com.nexus.NeuroForge.config;
 
 import com.nexus.NeuroForge.models.interfaces.Role;
-import com.nexus.NeuroForge.models.User;
-import com.nexus.NeuroForge.repositories.UserRepository;
+import com.nexus.NeuroForge.models.user.User;
+import com.nexus.NeuroForge.repositories.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

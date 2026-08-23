@@ -16,6 +16,8 @@ import ReleaseDetailModal from "../../components/releases/ReleaseDetailModal";
 import AlertsPanel from "../../components/releases/AlertsPanel";
 import KpiTrendChart from "../../components/releases/KpiTrendChart";
 import AlertRulesPanel from "../../components/releases/AlertRulesPanel";
+import PrometheusStatusBadge from "../../components/releases/PrometheusStatusBadge";
+import RecentLogsPanel from "../../components/releases/RecentLogsPanel";
 
 export default function ReleasesMonitoring() {
   const { project } = useOutletContext();
@@ -233,6 +235,11 @@ const fetchHistory = useCallback(
             Blue-green releases, environment health, and rollback for{" "}
             {project?.name || "this project"}.
           </p>
+          {project?.id && (
+            <div style={{ marginTop: 6 }}>
+              <PrometheusStatusBadge projectId={project.id} />
+            </div>
+          )}
         </div>
         {canEdit && (
           <button className="btn-primary" onClick={handleOpenCreateModal}>
@@ -263,6 +270,7 @@ const fetchHistory = useCallback(
 />
           <AlertsPanel alerts={alerts} loading={loadingAlerts} />
           <KpiTrendChart history={history} />
+          <RecentLogsPanel projectId={project.id} />
           <div className="panel">
             <div className="panel-header">
               <h2>Release history</h2>

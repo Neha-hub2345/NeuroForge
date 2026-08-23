@@ -21,11 +21,17 @@ on:
         default: 'STAGING'
 
 env:
-  # FIX: these used to be hardcoded literals (PROJECT_ID: 1, ENV_NAME: STAGING),
-  # so every build/rollback reported back the same project/env no matter which
-  # project actually triggered it. Now they come from the workflow_dispatch
-  # inputs the backend sends, and only fall back to defaults for a plain
-  # `git push` (which has no inputs to read from).
+  # FIX: these used to be hardcoded literals (PROJECT_ID: 1, ENV_NAME: STAGING).
+  # The backend's dispatchWorkflow() call never actually sent a project_id
+  # input (only rollback/image_tag), so keying PROJECT_ID off
+  # github.event.inputs.project_id was silently always falling back to '1'
+  # regardless of which project triggered the build. Since this workflow
+  # file lives in one repo per project anyway, PROJECT_ID now comes from a
+  # repo-level Actions variable instead — set it once in
+  # Settings > Secrets and variables > Actions > Variables to the numeric
+  # project ID shown in NeuroForge's Project Settings. ENV_NAME still
+  # respects a manual workflow_dispatch override first, then an optional
+  # DEPLOY_ENV variable, then falls back to STAGING.
   PROJECT_ID: ${{ vars.PROJECT_ID }}
   ENV_NAME: ${{ github.event.inputs.environment || vars.DEPLOY_ENV || 'STAGING' }}
 
@@ -165,6 +171,19 @@ jobs:
         if: github.event.inputs.rollback != 'true'
         run: docker push ghcr.io/${{ steps.image.outputs.repo }}:${{ steps.image.outputs.tag }}
 
+      - name: Trigger real deploy hook (if configured)
+        if: always()
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$DEPLOY_HOOK_URL" ]; then
+            echo "Calling deploy hook to trigger a real deployment..."
+            curl -s -o /dev/null -w "Deploy hook responded: %{http_code}\n" -X POST "$DEPLOY_HOOK_URL" \
+              || echo "Deploy hook call failed — continuing, this is non-fatal to the pipeline."
+          else
+            echo "No DEPLOY_HOOK_URL secret set — skipping real deploy trigger. Add one in Project Settings > GitHub Repository to enable this."
+          fi
+
       - name: Pull previous image (rollback)
         if: github.event.inputs.rollback == 'true'
         run: docker pull ghcr.io/${{ steps.image.outputs.repo }}:${{ steps.image.outputs.tag }}
@@ -263,9 +282,22 @@ jobs:
       - name: Send webhook to controller
         if: always()
         env:
+          # Same secret shown in Project Settings -> GitHub Integration and
+          # copy-pasted into this repo's Actions secrets. The controller
+          # rejects any webhook whose body doesn't hash to the signature in
+          # X-Hub-Signature-256, so this step has to actually sign the
+          # payload — previously it just posted plain JSON with no
+          # signature header at all, which is why every build was failing
+          # with "Invalid webhook signature" regardless of build result.
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
           STATUS="${{ job.status == 'success' && 'SUCCESS' || 'FAILED' }}"
+
+          # Build the exact payload once and reuse it for both hashing and
+          # sending — if we re-rendered the JSON a second time for the
+          # curl call, any whitespace/formatting drift between the two
+          # would make the signature not match the body GitHub actually
+          # sends.
           PAYLOAD=$(cat <<EOF
           {
             "projectId": ${{ env.PROJECT_ID }},

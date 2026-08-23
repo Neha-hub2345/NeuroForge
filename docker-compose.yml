@@ -17,8 +17,15 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      # Lets the frontend embed dashboard panels via iframe without forcing
+      # a Grafana login prompt inside the app. Anonymous users only get
+      # Viewer access — no edit/admin capability.
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
+      - GF_SECURITY_ALLOW_EMBEDDING=true
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
     networks:
       - neuroforge-network
 
@@ -75,12 +82,17 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/neuroforge_nexus
       DB_USERNAME: postgres
       DB_PASSWORD: ${DB_PASSWORD}
+      APP_ENCRYPTION_SECRET: ${APP_ENCRYPTION_SECRET}
+      APP_ENCRYPTION_SALT: ${APP_ENCRYPTION_SALT}
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/neuroforge-nexus/protocol/openid-connect/certs
       KEYCLOAK_ISSUER: http://localhost:8080/realms/neuroforge-nexus
       KEYCLOAK_ADMIN_CLIENT_SECRET: ${KEYCLOAK_ADMIN_CLIENT_SECRET:-unused}
       KEYCLOAK_ADMIN_SERVER_URL: http://keycloak:8080
-      APP_ENCRYPTION_SECRET: ${APP_ENCRYPTION_SECRET}
-      APP_ENCRYPTION_SALT: ${APP_ENCRYPTION_SALT}
+      GITHUB_PAT: ${GITHUB_PAT}
+      GITHUB_OWNER: ${GITHUB_OWNER}
+      GITHUB_REPO: ${GITHUB_REPO}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
     depends_on:
       postgres:
         condition: service_healthy

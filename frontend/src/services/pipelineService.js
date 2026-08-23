@@ -15,6 +15,9 @@ export const pipelineService = {
   getHistory: (projectId) => client.get('/pipelines', { params: { projectId } }).then((r) => r.data),
   getKpis: (projectId) => client.get('/pipelines/kpi', { params: { projectId } }).then((r) => r.data),
   getDetail: (id) => client.get(`/pipelines/${id}`).then((r) => r.data),
+  // Polled while a build is running to tail its live GitHub Actions logs
+  // (see usePipelineDashboard's live-tracking effect).
+  getLiveStatus: (projectId) => client.get('/pipelines/live', { params: { projectId } }).then((r) => r.data),
   triggerBuild: (projectId) => client.post(`/pipelines/trigger/${projectId}`).then((r) => r.data),
   rollbackBuild: (pipelineId) => client.post(`/pipelines/${pipelineId}/rollback`).then((r) => r.data)
 }

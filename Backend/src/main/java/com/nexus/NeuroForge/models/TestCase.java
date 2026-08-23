@@ -2,6 +2,7 @@ package com.nexus.NeuroForge.models;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.nexus.NeuroForge.models.interfaces.TestResult;
+import com.nexus.NeuroForge.models.pipeline.Pipeline;
 import jakarta.persistence.*;
 
 @Entity

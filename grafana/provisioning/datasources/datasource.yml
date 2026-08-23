@@ -1,0 +1,16 @@
+# [M4][Jashanpreet] Step 6 — Grafana provisioning.
+# Without this, every `docker compose down -v` wipes grafana_data and you
+# have to re-add the Prometheus datasource by hand through the UI. This
+# file makes it automatic on every container start, matching the service
+# name/port already in docker-compose.yml + prometheus.yml.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: 15s

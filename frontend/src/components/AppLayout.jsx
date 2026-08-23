@@ -1,6 +1,6 @@
 import { NavLink, Outlet, Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, FolderKanban, Users2, UserCircle, Bell, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users2, UserCircle, Activity, Bell, LogOut, Menu, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { roleLabel } from '../utils/roles'
 import { notificationService } from '../services/notificationService'
@@ -14,7 +14,8 @@ const workspaceItems = [
   { to: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { to: '/projects', label: 'Projects', Icon: FolderKanban },
   { to: '/teams', label: 'Teams', Icon: Users2 },
-  { to: '/users', label: 'Users', Icon: UserCircle }
+  { to: '/users', label: 'Users', Icon: UserCircle },
+  { to: '/observability', label: 'Observability', Icon: Activity }
 ]
 
 export default function AppLayout() {

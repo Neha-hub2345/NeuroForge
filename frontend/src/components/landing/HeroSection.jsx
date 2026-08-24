@@ -19,7 +19,7 @@ export default function HeroSection({ onLogin }) {
         </motion.h1>
         <motion.p className="hero-subtitle" variants={fadeUp}>
           NeuroForge Nexus brings project tracking, agile sprints and DevOps visibility into a single
-          enterprise-grade workspace — built on Spring Boot, Kafka and Keycloak.
+          enterprise-grade workspace — built on Spring Boot and Keycloak.
         </motion.p>
         <motion.div className="hero-actions" variants={fadeUp}>
           <button className="btn-primary btn-lg" onClick={onLogin}>Login / Register</button>

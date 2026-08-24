@@ -15,7 +15,6 @@ const workspaceItems = [
   { to: '/projects', label: 'Projects', Icon: FolderKanban },
   { to: '/teams', label: 'Teams', Icon: Users2 },
   { to: '/users', label: 'Users', Icon: UserCircle },
-  { to: '/observability', label: 'Observability', Icon: Activity }
 ]
 
 export default function AppLayout() {

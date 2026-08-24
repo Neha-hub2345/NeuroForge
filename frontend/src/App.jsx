@@ -8,6 +8,7 @@ import Projects from './pages/Projects'
 import Teams from './pages/Teams'
 import Users from './pages/Users'
 import Notifications from './pages/Notifications'
+import Observability from './pages/Observability'
 
 // Project-scoped pages (Milestone 2 restructure + Milestone 3 addition) —
 // nested under /projects/:projectId/* so a project is only ever picked once.
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/teams" element={<Teams />} />
           <Route path="/users" element={<Users />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/observability" element={<Observability />} />
         </Route>
 
         {/* Project-level shell — its own sidebar (Board, Backlog, Sprints &

@@ -10,7 +10,9 @@ import com.nexus.NeuroForge.repositories.project.ProjectRepository;
 import com.nexus.NeuroForge.repositories.sprint.SprintRepository;
 import com.nexus.NeuroForge.repositories.task.TaskRepository;
 import com.nexus.NeuroForge.services.notification.NotificationService;
+import com.nexus.NeuroForge.services.security.ProjectAccessGuard;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,15 +25,15 @@ public class TaskService {
     private final SprintRepository sprintRepository;
     private final ProjectRepository projectRepository;
 
+
     // KAFKA DISABLED: kafkaProducer temporarily removed. Uncomment to re-enable Kafka publishing.
     // @Autowired
     // private KafkaProducerService kafkaProducer;
 
-    // NOTIFICATION FIX: KafkaConsumerService used to be the only place that turned a
-    // TaskEvent into a saved Notification row. With Kafka disabled that consumer never
-    // runs, so notification creation is now delegated directly to NotificationService instead.
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private ProjectAccessGuard projectAccessGuard;
 
     public TaskService(TaskRepository taskRepository, SprintRepository sprintRepository, ProjectRepository projectRepository) {
         this.taskRepository = taskRepository;
@@ -39,13 +41,16 @@ public class TaskService {
         this.projectRepository = projectRepository;
     }
 
-    public Task createTask(TaskRequest request) {
+    public Task createTask(TaskRequest request,Jwt jwt) {
         Task task = new Task();
         task.setTitle(request.getTitle());
         task.setPoints(request.getPoints());
         task.setStatus(request.getStatus());
         task.setAssigneeId(request.getAssigneeId());
         task.setDescription(request.getDescription());
+
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
+
 
         // CHANGED: sprintId is optional now. No sprint -> the task is created straight into the backlog.
         if (request.getSprintId() != null) {
@@ -99,11 +104,14 @@ public class TaskService {
     }
 
     // NEW: moves a backlog task into a sprint — this is what "Add to sprint" now actually does.
-    public Task scheduleTaskIntoSprint(Long taskId, Long sprintId) {
+    public Task scheduleTaskIntoSprint(Long taskId, Long sprintId,Jwt jwt) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         Sprint sprint = sprintRepository.findById(sprintId)
                 .orElseThrow(() -> new RuntimeException("Sprint not found"));
+
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
+
 
         task.setSprint(sprint);
         Task updatedTask = taskRepository.save(task);
@@ -123,16 +131,20 @@ public class TaskService {
     }
 
     // NEW: persists description edits made in TaskDetailModal.
-    public Task updateDescription(Long taskId, String description) {
+    public Task updateDescription(Long taskId, String description,Jwt jwt) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
+
         task.setDescription(description);
         return taskRepository.save(task);
     }
 
-    public Task updateTaskStatus(Long taskId, String newStatus) {
+    public Task updateTaskStatus(Long taskId, String newStatus, Jwt jwt) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
+
 
         task.setStatus(newStatus);
 
@@ -154,9 +166,10 @@ public class TaskService {
         return updatedTask;
     }
 
-    public Task addComments(Long taskId, String comment) {
+    public Task addComments(Long taskId, String comment,Jwt jwt) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
 
         task.getComments().add(comment);
 
@@ -172,20 +185,27 @@ public class TaskService {
         return updatedTask;
     }
 
-    public void deleteTask(Long taskId) {
+    public void deleteTask(Long taskId,Jwt jwt) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
+
+
         taskRepository.deleteById(taskId);
     }
 
-    public Task toggleBlockStatus(Long taskId, Boolean isBlocked) {
+    public Task toggleBlockStatus(Long taskId, Boolean isBlocked,Jwt jwt) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
         task.setIsBlocked(isBlocked);
         return taskRepository.save(task);
     }
 
-    public Task assignUserToTask(Long taskId, Long userId) {
+    public Task assignUserToTask(Long taskId, Long userId,Jwt jwt) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
+        projectAccessGuard.assertMember(jwt, resolveProject(task));
 
         task.setAssigneeId(userId);
         Task savedTask = taskRepository.save(task);
@@ -207,4 +227,10 @@ public class TaskService {
     public List<Task> getTasksForSprint(Long sprintId) {
         return taskRepository.findBySprintId(sprintId);
     }
+    private Project resolveProject(Task task) {
+        return task.getSprint() != null ? task.getSprint().getProject() : projectRepository.findById(task.getProject()).orElse(null);
+    }
+
 }
+
+

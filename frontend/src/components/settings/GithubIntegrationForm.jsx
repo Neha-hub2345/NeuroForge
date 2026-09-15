@@ -94,7 +94,7 @@ export default function GithubIntegrationForm({ projectId, canEdit }) {
               <input
                 value={form.githubOwner}
                 onChange={(e) => setForm((f) => ({ ...f, githubOwner: e.target.value }))}
-                placeholder="e.g. RajanGill04"
+                placeholder="Username"
                 required
               />
             </label>

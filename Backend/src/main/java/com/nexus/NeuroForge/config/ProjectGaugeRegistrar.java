@@ -1,27 +1,5 @@
 package com.nexus.NeuroForge.config;
 
-// [M4][Jashanpreet] Step 5 — per-project Micrometer gauges.
-//
-// ObservabilityConfig registers the 4 release KPI gauges exactly once, at
-// startup, aggregated across all projects. That's fine for a single global
-// panel, but Grafana can't filter/template by project unless each series
-// carries a project_id tag. Gauges can't just be registered once per
-// project at startup the way ObservabilityConfig does it, because the
-// project list is dynamic — projects get created (and cascade-deleted,
-// see models/project/Project.java) throughout the app's lifetime, not just
-// at boot.
-//
-// So this runs on a schedule instead: each tick, diff the live project list
-// against what's currently registered, add gauges for new projects, and
-// remove gauges for projects that no longer exist. Piggybacks on the same
-// dedicated scheduler pool as ExternalHealthMonitorService (see
-// SchedulingConfig) so a slow tick here can't delay alert evaluation.
-//
-// Gauge.builder's state-function form (registered once, re-read on every
-// Prometheus scrape) is intentional: ReleaseService.getKpis(projectId) is
-// already 5s-cached, so re-registering per tick would be redundant work —
-// we only need to register/deregister when the *set* of projects changes,
-// not when their KPI values change.
 
 import com.nexus.NeuroForge.models.project.Project;
 import com.nexus.NeuroForge.repositories.project.ProjectRepository;

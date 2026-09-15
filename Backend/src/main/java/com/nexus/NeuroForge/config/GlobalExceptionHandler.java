@@ -32,4 +32,10 @@ public class GlobalExceptionHandler {
         ex.printStackTrace(); // still logs full trace to console for you
         return ResponseEntity.internalServerError().body(Map.of("error", "Something went wrong: " + ex.getMessage()));
     }
+    // GlobalExceptionHandler.java — add this
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(org.springframework.security.access.AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+    }
+
 }

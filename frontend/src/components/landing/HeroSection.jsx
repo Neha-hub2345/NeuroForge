@@ -12,7 +12,7 @@ export default function HeroSection({ onLogin }) {
       <div className="hero-glow" />
       <motion.div className="hero-content" initial="hidden" animate="show" variants={stagger}>
         <motion.span className="section-eyebrow" variants={fadeUp}>
-          <Sparkles size={13} /> Cloud-native SDLC platform
+          <Sparkles size={13} /> Enterprise Software Lifecycle and DevOps Management Platform
         </motion.span>
         <motion.h1 className="hero-title" variants={fadeUp}>
           Ship software with <span className="hero-gradient-text">one connected platform</span>

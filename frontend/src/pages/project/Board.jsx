@@ -12,7 +12,7 @@ import FlagBlockerModal from '../../components/board/FlagBlockerModal'
 import { useBoardTasks } from '../../hooks/useBoardTasks'
 
 export default function Board() {
-  const { project, sprints, sprintId, setSprintId, selectedSprint } = useOutletContext()
+  const { user,project, sprints, sprintId, setSprintId, selectedSprint } = useOutletContext()
   const { roles } = useAuth()
   const canEdit = canManage(roles?.[0])
 
@@ -35,7 +35,7 @@ export default function Board() {
     ? users.filter((u) => u.team?.name === project.teamName || u.teamName === project.teamName)
     : users
 
-  return (
+  return ( 
     <div className="page">
       <BoardHeader
         selectedSprint={selectedSprint}
